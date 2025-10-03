@@ -72,20 +72,37 @@ def parse_string(input_string: str) -> Tuple[str, str]:
 
     Note:
         - The function is case-sensitive and assumes `OUTPUT:` and `REASONING:` are correctly capitalized.
+        - If the format is not found, it will attempt fallback parsing or use the raw input.
     """
     # Use regular expressions to extract OUTPUT and REASONING
     match = re.search(r"OUTPUT:\s*(.+?)\s*REASONING:\s*(.+)", input_string, re.DOTALL)
 
-    if not match:
-        raise ValueError(
-            "The generated response is not in the expected 'OUTPUT:... REASONING:...' format."
-        )
-
-    # Extract the matched groups: output and reasoning
-    output = match.group(1).strip()
-    reasoning = match.group(2).strip()
-
-    return output, reasoning
+    if match:
+        # Extract the matched groups: output and reasoning
+        output = match.group(1).strip()
+        reasoning = match.group(2).strip()
+        return output, reasoning
+    
+    # Fallback: Try case-insensitive matching
+    match = re.search(r"output:\s*(.+?)\s*reasoning:\s*(.+)", input_string, re.DOTALL | re.IGNORECASE)
+    if match:
+        output = match.group(1).strip()
+        reasoning = match.group(2).strip()
+        print(f"⚠️  Warning: Model used lowercase format. Output parsed successfully.")
+        return output, reasoning
+    
+    # Fallback: Check if only OUTPUT is present
+    match = re.search(r"OUTPUT:\s*(.+)", input_string, re.DOTALL)
+    if match:
+        output = match.group(1).strip()
+        reasoning = "No reasoning provided by model"
+        print(f"⚠️  Warning: No REASONING found. Using output only.")
+        return output, reasoning
+    
+    # Final fallback: Use the entire response as output
+    print(f"⚠️  Warning: Response format not recognized. Using raw output.")
+    print(f"Raw response: {input_string[:200]}...")  # Print first 200 chars for debugging
+    return input_string.strip(), "Format not recognized - raw output used"
 
 
 
@@ -186,8 +203,12 @@ def sdg(
                 "generated_text"
             ][-1]["content"]
 
-            # Uncomment to see the raw outputs
-            # print(result)
+            # Debug: Print raw outputs (helpful for troubleshooting format issues)
+            if i == start:  # Print the first result of each batch for debugging
+                print(f"\n📝 Sample model output:")
+                print(f"{'='*50}")
+                print(result[:300] if len(result) > 300 else result)
+                print(f"{'='*50}\n")
 
             text, reasoning = parse_string(result)
 

@@ -32,6 +32,80 @@ class InteractiveDataGenerator:
         self.batch_size = 20
         self.output_dir = "./"
         self.save_reasoning = False
+    
+    def check_dependencies(self) -> bool:
+        """Check if all required dependencies are installed."""
+        print("\n🔍 CHECKING DEPENDENCIES")
+        print("=" * 70)
+        
+        required_packages = [
+            ('dotenv', 'python-dotenv'),
+            ('pandas', 'pandas'),
+            ('huggingface_hub', 'huggingface-hub'),
+            ('transformers', 'transformers'),
+            ('torch', 'torch'),
+        ]
+        
+        missing_packages = []
+        dotenv_available = False
+        
+        for import_name, package_name in required_packages:
+            try:
+                __import__(import_name)
+                print(f"✅ {package_name:30} - installed")
+                if import_name == 'dotenv':
+                    dotenv_available = True
+            except ImportError:
+                print(f"❌ {package_name:30} - MISSING")
+                missing_packages.append(package_name)
+        
+        # Check for data-gen.py file
+        data_gen_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data-gen.py')
+        if os.path.exists(data_gen_path):
+            print(f"✅ {'data-gen.py':30} - found")
+        else:
+            print(f"❌ {'data-gen.py':30} - MISSING")
+            missing_packages.append('data-gen.py (file)')
+        
+        # Check for Hugging Face token only if dotenv is available
+        hf_token = None
+        if dotenv_available:
+            from dotenv import load_dotenv
+            load_dotenv()
+            hf_token = os.getenv("HF_TOKEN")
+        else:
+            hf_token = os.getenv("HF_TOKEN")
+        
+        if hf_token:
+            print(f"✅ {'HF_TOKEN':30} - configured")
+        else:
+            print(f"⚠️  {'HF_TOKEN':30} - NOT SET (required for model access)")
+            print("\n   Set your token by creating a .env file with:")
+            print("   HF_TOKEN=your_huggingface_token_here")
+            print("\n   Or export it as an environment variable:")
+            print("   export HF_TOKEN=your_huggingface_token_here")
+        
+        print("=" * 70)
+        
+        if missing_packages:
+            print("\n❌ DEPENDENCY CHECK FAILED")
+            print("\nMissing packages:")
+            for pkg in missing_packages:
+                print(f"  - {pkg}")
+            print("\nTo install missing packages, run:")
+            print("  pip install " + " ".join([p for p in missing_packages if not p.endswith('(file)')]))
+            print("\nOr using uv:")
+            print("  uv pip install " + " ".join([p for p in missing_packages if not p.endswith('(file)')]))
+            return False
+        
+        if not hf_token:
+            proceed = input("\n⚠️  No HF_TOKEN found. Continue anyway? (y/n): ").strip().lower()
+            if proceed not in ['y', 'yes']:
+                return False
+        
+        print("\n✅ ALL DEPENDENCIES SATISFIED")
+        print()
+        return True
         
     def print_banner(self):
         """Print a welcome banner."""
@@ -338,9 +412,9 @@ prompt_examples = """{self.prompt_examples}"""
         config_path = self.create_config_file()
         
         try:
-            # Build command
+            # Build command using uv run to ensure correct Python environment
             cmd = [
-                sys.executable, "data-gen.py",
+                "uv", "run", "python", "data-gen.py",
                 "--config", config_path,
                 "--sample_size", str(self.sample_size),
                 "--model", self.model,
@@ -377,6 +451,11 @@ prompt_examples = """{self.prompt_examples}"""
     def run(self):
         """Main execution flow."""
         self.print_banner()
+        
+        # Check dependencies first
+        if not self.check_dependencies():
+            print("\n❌ Please install missing dependencies and try again.")
+            sys.exit(1)
         
         try:
             self.configure_use_case()
