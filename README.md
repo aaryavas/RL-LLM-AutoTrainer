@@ -1,6 +1,51 @@
 # RL-LLM-AutoTrainer
 
-Overview
+## 🚀 Quick Start
+
+> **📖 Looking for a quick reference?** See [SETUP.md](SETUP.md) for a one-page setup guide.
+
+Want to generate synthetic data immediately? Run this:
+
+```bash
+# 1. Navigate to the CLI directory
+cd prototyping/cli-wrapper
+
+# 2. Install and build (first time only)
+npm install && npm run build && npm link
+
+# 3. Run the tool (from anywhere after linking)
+synth-data
+```
+
+That's it! The interactive CLI will guide you through the rest.
+
+**Verify Installation:**
+```bash
+synth-data --version  # Should output: 1.0.0
+synth-data --help     # Shows usage information
+./test.sh             # Run test suite (from cli-wrapper directory)
+```
+
+**What You'll See:**
+```
+   ╭───────────────────────────────────────────────────────────╮
+   │                                                           │
+   │   🚀 SYNTHETIC DATA GENERATOR 🚀                          │
+   │                                                           │
+   │   TypeScript CLI Wrapper for AI-Powered Data Generation   │
+   │                                                           │
+   ╰───────────────────────────────────────────────────────────╯
+
+✔ All dependencies satisfied
+
+📋 STEP 1: Use Case Configuration
+──────────────────────────────────────────────────
+? What is the main purpose of your synthetic data? ›
+```
+
+---
+
+## Overview
 - This repository contains prototyping tools for generating synthetic training data for LLM/RL workflows. The current prototype includes:
   - A TypeScript/Node.js CLI wrapper that provides an interactive, user-friendly terminal interface.
   - Python scripts that actually perform (or orchestrate) the data generation, using the Hugging Face ecosystem.
@@ -43,39 +88,149 @@ Environment Variables
   - Or put it in a .env file (python-dotenv is used when available):
     - HF_TOKEN=your_token
 
-Setup and Installation
-1) TypeScript CLI (recommended path)
-- Navigate to the CLI package:
-  - cd prototyping/cli-wrapper
-- Install dependencies:
-  - npm install
-- Build the TypeScript code:
-  - npm run build
-- Optional: Install globally for a synth-data command:
-  - npm link
-- Alternatively, use the convenience script:
-  - ./install.sh
+## 📦 Setup and Installation
 
-2) Python environment
-- Ensure Python dependencies are installed (choose one of the following):
-  - pip install python-dotenv pandas huggingface-hub transformers torch
-  - or with uv: uv pip install python-dotenv pandas huggingface-hub transformers torch
-- Set your HF_TOKEN as described above.
+### Prerequisites
+Before you begin, ensure you have:
+- Node.js 18+ and npm installed
+- Python 3.8+ (3.10+ recommended)
+- A Hugging Face account and access token
 
-Running
-- Using the globally linked CLI (if you ran npm link inside prototyping/cli-wrapper):
-  - synth-data
-- Running from the CLI package directory without linking:
-  - npm start        # runs dist/index.js
-  - npm run dev      # runs src/index.ts via ts-node
-- Running the Python interactive script directly (bypassing the Node CLI):
-  - python3 prototyping/interactive-data-gen.py
+### Step 1: Install TypeScript CLI
 
-Available Scripts (Node package: prototyping/cli-wrapper)
-- npm run dev     — ts-node src/index.ts
-- npm run build   — tsc
-- npm start       — node dist/index.js
-- npm run watch   — tsc --watch
+Navigate to the CLI package and install dependencies:
+
+```bash
+cd prototyping/cli-wrapper
+npm install
+```
+
+Build the TypeScript code:
+
+```bash
+npm run build
+```
+
+Install globally for the `synth-data` command:
+
+```bash
+npm link
+```
+
+**Alternative: Use the convenience script**
+
+```bash
+./install.sh
+```
+
+### Step 2: Install Python Dependencies
+
+Install required Python packages:
+
+```bash
+pip install python-dotenv pandas huggingface-hub transformers torch
+```
+
+**Or using uv (if available):**
+
+```bash
+uv pip install python-dotenv pandas huggingface-hub transformers torch
+```
+
+### Step 3: Configure Hugging Face Token
+
+Set your HF_TOKEN environment variable:
+
+```bash
+export HF_TOKEN=your_huggingface_token_here
+```
+
+**Or create a .env file:**
+
+```bash
+echo "HF_TOKEN=your_huggingface_token_here" > prototyping/.env
+```
+
+### Step 4: Verify Installation
+
+Check that everything is working:
+
+```bash
+synth-data --version
+synth-data --help
+```
+
+Run the test suite:
+
+```bash
+cd prototyping/cli-wrapper
+./test.sh
+```
+
+## 🚀 Running the Tool
+
+### Recommended: Global Command
+
+After installation, run from anywhere:
+
+```bash
+synth-data
+```
+
+✨ **This is the easiest way!** The interactive CLI will guide you through all configuration steps.
+
+### Alternative: Run from CLI Directory
+
+If you haven't run `npm link`, you can run from the CLI package directory:
+
+```bash
+cd prototyping/cli-wrapper
+npm start
+```
+
+### Development Mode
+
+For development with live TypeScript compilation:
+
+```bash
+cd prototyping/cli-wrapper
+npm run dev
+```
+
+### Direct Python Execution
+
+Bypass the Node CLI and run Python directly:
+
+```bash
+cd prototyping
+python3 interactive-data-gen.py
+```
+
+## 🛠️ Available Scripts
+
+All commands should be run from `prototyping/cli-wrapper`:
+
+**Development:**
+```bash
+npm run dev        # Run with ts-node (hot reload)
+npm run watch      # Watch mode for TypeScript compilation
+```
+
+**Build:**
+```bash
+npm run build      # Compile TypeScript to JavaScript
+```
+
+**Run:**
+```bash
+npm start          # Run the compiled CLI
+synth-data         # Run globally (after npm link)
+```
+
+**Testing:**
+```bash
+./test.sh          # Run the test suite
+```
 
 Notes on Behavior
 - The Node CLI checks for Python 3 availability and for prototyping/interactive-data-gen.py. It then launches the Python interactive flow, which:
@@ -84,12 +239,90 @@ Notes on Behavior
   - Guides you through defining labels, categories, examples, and generation parameters.
   - Invokes data-gen.py with the collected configuration.
 
-Testing
-- No automated tests were found in this repository.
-- TODO: Add tests for:
-  - Node CLI argument parsing and path handling.
-  - Python interactive flow (unit tests for configuration assembly).
-  - Integration test invoking data-gen.py with a small sample size.
+## Troubleshooting
+
+**`synth-data: command not found`**
+```bash
+cd prototyping/cli-wrapper
+npm link
+```
+
+**Build errors with TypeScript:**
+```bash
+cd prototyping/cli-wrapper
+npm install
+npm run build
+```
+
+**Python dependencies missing:**
+```bash
+pip install python-dotenv pandas huggingface-hub transformers torch
+# or with uv:
+uv pip install python-dotenv pandas huggingface-hub transformers torch
+```
+
+**HuggingFace authentication errors:**
+```bash
+export HF_TOKEN=your_token_here
+# or create a .env file in prototyping/ with:
+echo "HF_TOKEN=your_token_here" > prototyping/.env
+```
+
+**To reset and reinstall everything:**
+```bash
+cd prototyping/cli-wrapper
+rm -rf node_modules dist
+npm install
+npm run build
+npm link
+synth-data --version  # verify it works
+```
+
+## ✅ Testing
+
+### Quick Verification
+
+Check that the CLI is installed correctly:
+
+```bash
+synth-data --version
+```
+
+View help documentation:
+
+```bash
+synth-data --help
+```
+
+### Run the Automated Test Suite
+
+```bash
+cd prototyping/cli-wrapper
+./test.sh
+```
+
+The test suite verifies:
+- ✓ Build succeeded
+- ✓ Help command works
+- ✓ Version check works
+- ✓ Python script exists
+- ✓ Dependencies installed
+- ✓ TypeScript compiles without errors
+
+### Test the Full Flow
+
+Generate a small test dataset:
+
+```bash
+synth-data
+```
+
+Follow the interactive prompts and set a small sample size (e.g., 5 samples) for a quick test.
+
+### Future Improvements
+- Add unit tests for configuration assembly
+- Add integration tests with mock models
+- Add CI/CD pipeline for automated testing
 
 Project Status and Roadmap
 - Current focus: interactive synthetic data generation prototype.

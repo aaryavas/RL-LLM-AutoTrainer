@@ -356,3 +356,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+prototyping/generated_data
+prototyping/intel-synthetic
