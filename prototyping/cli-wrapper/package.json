@@ -22,13 +22,13 @@
   "license": "MIT",
   "dependencies": {
     "@inquirer/prompts": "^5.3.8",
+    "boxen": "^5.1.2",
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
-    "ora": "^5.4.1",
-    "boxen": "^5.1.2"
+    "ora": "^5.4.1"
   },
   "devDependencies": {
-    "@types/node": "^20.14.15",
+    "@types/node": "^20.19.21",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   }
