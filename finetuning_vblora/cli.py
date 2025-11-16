@@ -159,8 +159,8 @@ def setup_finetune_parser(subparsers):
     vblora_group = finetune_parser.add_argument_group('VB-LoRA options')
     vblora_group.add_argument('--num-vectors', type=validate_positive_int, default=90,
                              help='Number of vectors in vector bank (default: 90)')
-    vblora_group.add_argument('--vector-length', type=validate_positive_int, default=160,
-                             help='Length of each vector - must divide model dimensions evenly (default: 160)')
+    vblora_group.add_argument('--vector-length', type=validate_positive_int, default=64,
+                         help='Length of each vector - must divide model dimensions evenly (default: 64)')
     vblora_group.add_argument('--lora-r', type=validate_positive_int, default=4,
                              help='LoRA rank (default: 4)')
     vblora_group.add_argument('--lr-vector-bank', type=validate_positive_float, default=1e-3,

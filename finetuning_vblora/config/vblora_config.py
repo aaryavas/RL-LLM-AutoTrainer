@@ -16,7 +16,7 @@ class VBLoRAConfig:
     lora_alpha: float = 16  # LoRA scaling factor
     lora_dropout: float = 0.05
     num_vectors: int = 90  # Number of vectors in the vector bank
-    vector_length: int = 160  # Length of each vector (must divide ALL model dimensions evenly)
+    vector_length: int = 64  # Changed from 160 -> 64 (must be multiple of 64, divides all SmolLM2 dims)
     save_only_topk_weights: bool = True
 
     # Learning rates for different parameter groups
@@ -52,44 +52,38 @@ class VBLoRAConfig:
             "save_only_topk_weights": self.save_only_topk_weights,
             "task_type": "CAUSAL_LM",
         }
-
-
 @dataclass
 class VBLoRADefaults:
     """Default configurations for different use cases."""
 
     @staticmethod
     def quick_test() -> VBLoRAConfig:
-        """Fast configuration for testing."""
         return VBLoRAConfig(
             lora_r=4,
             num_vectors=32,
-            vector_length=128,
+            vector_length=64,  # Changed from 128
         )
 
     @staticmethod
     def standard() -> VBLoRAConfig:
-        """Standard configuration for typical use."""
         return VBLoRAConfig(
             lora_r=4,
             num_vectors=90,
-            vector_length=160,
+            vector_length=64,  # Changed from 160
         )
 
     @staticmethod
     def high_capacity() -> VBLoRAConfig:
-        """High capacity configuration for complex tasks."""
         return VBLoRAConfig(
             lora_r=8,
             num_vectors=2048,
-            vector_length=160,
+            vector_length=64,  # Changed from 160
         )
 
     @staticmethod
     def memory_efficient() -> VBLoRAConfig:
-        """Memory efficient configuration."""
         return VBLoRAConfig(
             lora_r=4,
             num_vectors=64,
-            vector_length=128,
+            vector_length=64,  # Changed from 128
         )

@@ -30,21 +30,21 @@ class ModelVariantConfig:
 SMOLLM2_VARIANTS: Dict[str, ModelVariantConfig] = {
     "SmolLM2-135M": ModelVariantConfig(
         model_name="HuggingFaceTB/SmolLM2-135M-Instruct",
-        batch_size=16,
+        batch_size=1, 
         learning_rate=5e-4,
         recommended_num_vectors=64,
         description="Smallest SmolLM2 variant (135M parameters)",
     ),
     "SmolLM2-360M": ModelVariantConfig(
         model_name="HuggingFaceTB/SmolLM2-360M-Instruct",
-        batch_size=12,
+        batch_size=1,
         learning_rate=3e-4,
         recommended_num_vectors=90,
         description="Medium SmolLM2 variant (360M parameters)",
     ),
     "SmolLM2-1.7B": ModelVariantConfig(
         model_name="HuggingFaceTB/SmolLM2-1.7B-Instruct",
-        batch_size=4,
+        batch_size=1,  # Already 1
         learning_rate=2e-4,
         recommended_num_vectors=128,
         description="Largest SmolLM2 variant (1.7B parameters)",

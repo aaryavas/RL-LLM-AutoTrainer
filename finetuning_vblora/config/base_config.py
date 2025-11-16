@@ -17,8 +17,8 @@ class DataConfig:
     text_column: str = "text"
     label_column: str = "label"
     max_length: int = 512
-    source_max_len: int = 1024
-    target_max_len: int = 256
+    source_max_len: int = 512
+    target_max_len: int = 128
 
     def validate(self) -> None:
         """Validate configuration parameters."""
@@ -38,7 +38,7 @@ class TrainingConfig:
     learning_rate: float = 2e-4
     per_device_train_batch_size: int = 4
     per_device_eval_batch_size: int = 4
-    gradient_accumulation_steps: int = 4
+    gradient_accumulation_steps: int = 1
     warmup_steps: int = 100
     warmup_ratio: float = 0.1
     weight_decay: float = 0.0
