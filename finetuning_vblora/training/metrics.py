@@ -58,7 +58,8 @@ class MetricsComputer:
         Returns:
             Dictionary with computed metrics
         """
-        predictions, labels = eval_pred
+        predictions = eval_pred.predictions
+        labels = eval_pred.label_ids
 
         # For causal LM, predictions are logits
         # Compute loss-based metrics

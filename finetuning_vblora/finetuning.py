@@ -333,7 +333,9 @@ class SmolLM2VBLoRAFineTuner:
         logger.info("Training model")
 
         # Get data collator
-        data_collator = self.data_processor.get_data_collator(train_on_source=False)
+        # train_on_source=True to include input tokens in loss calculation
+        # This is necessary when labels are short (e.g., category names)
+        data_collator = self.data_processor.get_data_collator(train_on_source=True)
 
         # Create trainer
         trainer = VBLoRATrainer(
