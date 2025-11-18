@@ -167,6 +167,10 @@ class EpochMetricsCallback(TrainerCallback):
             "eval_loss": logs.get("eval_loss", 0.0),
             "train_loss": logs.get("train_loss", 0.0),
             "learning_rate": logs.get("learning_rate", 0.0),
+            "bleu": logs.get("eval_bleu", 0.0),
+            "rouge1": logs.get("eval_rouge1", 0.0),
+            "rouge2": logs.get("eval_rouge2", 0.0),
+            "rougeL": logs.get("eval_rougeL", 0.0),
         }
 
     def _display_metrics(self, metrics: dict) -> None:
@@ -180,31 +184,59 @@ class EpochMetricsCallback(TrainerCallback):
         eval_loss = metrics["eval_loss"]
         train_loss = metrics["train_loss"]
         lr = metrics["learning_rate"]
+        bleu = metrics["bleu"]
+        rouge1 = metrics["rouge1"]
+        rouge2 = metrics["rouge2"]
+        rougeL = metrics["rougeL"]
 
-        print(f"\n{'='*50}")
+        print(f"\n{'='*60}")
         print(f"EPOCH {epoch} RESULTS")
-        print(f"{'='*50}")
-        print(f"  Training Loss:   {train_loss:.4f}")
-        print(f"  Validation Loss: {eval_loss:.4f}")
-        print(f"  Learning Rate:   {lr:.2e}")
-        print(f"{'='*50}\n")
+        print(f"{'='*60}")
+        print(f"  Training Loss:      {train_loss:.4f}")
+        print(f"  Validation Loss:    {eval_loss:.4f}")
+        print(f"  Learning Rate:      {lr:.2e}")
+        print(f"  {'─'*56}")
+        print(f"  Text Generation Metrics:")
+        print(f"    BLEU Score:       {bleu:.4f}")
+        print(f"    ROUGE-1:          {rouge1:.4f}")
+        print(f"    ROUGE-2:          {rouge2:.4f}")
+        print(f"    ROUGE-L:          {rougeL:.4f}")
+        print(f"{'='*60}\n")
 
     def _display_summary(self) -> None:
         """Display training summary."""
-        print(f"\n{'='*50}")
+        print(f"\n{'='*60}")
         print("TRAINING SUMMARY")
-        print(f"{'='*50}")
+        print(f"{'='*60}")
         print(f"  Total Epochs: {len(self.epoch_metrics)}")
 
-        # Find best epoch
-        best_idx = min(
+        # Find best epoch by validation loss
+        best_loss_idx = min(
             range(len(self.epoch_metrics)),
             key=lambda i: self.epoch_metrics[i]["eval_loss"]
         )
-        best_metrics = self.epoch_metrics[best_idx]
+        best_loss_metrics = self.epoch_metrics[best_loss_idx]
 
-        print(f"  Best Epoch: {best_metrics['epoch']}")
-        print(f"  Best Validation Loss: {best_metrics['eval_loss']:.4f}")
+        print(f"\n  Best Model by Validation Loss:")
+        print(f"    Epoch:            {best_loss_metrics['epoch']}")
+        print(f"    Validation Loss:  {best_loss_metrics['eval_loss']:.4f}")
+        print(f"    BLEU Score:       {best_loss_metrics['bleu']:.4f}")
+        print(f"    ROUGE-L:          {best_loss_metrics['rougeL']:.4f}")
+
+        # Find best epoch by BLEU score
+        if any(m['bleu'] > 0 for m in self.epoch_metrics):
+            best_bleu_idx = max(
+                range(len(self.epoch_metrics)),
+                key=lambda i: self.epoch_metrics[i]["bleu"]
+            )
+            best_bleu_metrics = self.epoch_metrics[best_bleu_idx]
+
+            print(f"\n  Best Model by BLEU Score:")
+            print(f"    Epoch:            {best_bleu_metrics['epoch']}")
+            print(f"    BLEU Score:       {best_bleu_metrics['bleu']:.4f}")
+            print(f"    ROUGE-1:          {best_bleu_metrics['rouge1']:.4f}")
+            print(f"    ROUGE-2:          {best_bleu_metrics['rouge2']:.4f}")
+            print(f"    ROUGE-L:          {best_bleu_metrics['rougeL']:.4f}")
 
         # Show improvement
         if len(self.epoch_metrics) > 1:
@@ -212,6 +244,13 @@ class EpochMetricsCallback(TrainerCallback):
             final_loss = self.epoch_metrics[-1]["eval_loss"]
             improvement = first_loss - final_loss
 
-            print(f"  Loss Improvement: {improvement:+.4f}")
+            print(f"\n  Overall Improvement:")
+            print(f"    Loss Reduction:   {improvement:+.4f}")
 
-        print(f"{'='*50}\n")
+            if self.epoch_metrics[-1]['bleu'] > 0:
+                first_bleu = self.epoch_metrics[0]["bleu"]
+                final_bleu = self.epoch_metrics[-1]["bleu"]
+                bleu_improvement = final_bleu - first_bleu
+                print(f"    BLEU Gain:        {bleu_improvement:+.4f}")
+
+        print(f"{'='*60}\n")
