@@ -92,7 +92,7 @@ class SavePeftModelCallback(TrainerCallback):
 class EpochMetricsCallback(TrainerCallback):
     """
     Callback to display detailed metrics at the end of each epoch.
-    Provides visual feedback on training progress including classification metrics.
+    Provides visual feedback on training progress.
     """
 
     def __init__(self, show_metrics: bool = True):
@@ -167,10 +167,6 @@ class EpochMetricsCallback(TrainerCallback):
             "eval_loss": logs.get("eval_loss", 0.0),
             "train_loss": logs.get("train_loss", 0.0),
             "learning_rate": logs.get("learning_rate", 0.0),
-            "precision": logs.get("eval_precision", 0.0),
-            "recall": logs.get("eval_recall", 0.0),
-            "f1": logs.get("eval_f1", 0.0),
-            "accuracy": logs.get("eval_accuracy", 0.0),
         }
 
     def _display_metrics(self, metrics: dict) -> None:
@@ -184,59 +180,31 @@ class EpochMetricsCallback(TrainerCallback):
         eval_loss = metrics["eval_loss"]
         train_loss = metrics["train_loss"]
         lr = metrics["learning_rate"]
-        precision = metrics["precision"]
-        recall = metrics["recall"]
-        f1 = metrics["f1"]
-        accuracy = metrics["accuracy"]
 
-        print(f"\n{'='*60}")
+        print(f"\n{'='*50}")
         print(f"EPOCH {epoch} RESULTS")
-        print(f"{'='*60}")
-        print(f"  Training Loss:      {train_loss:.4f}")
-        print(f"  Validation Loss:    {eval_loss:.4f}")
-        print(f"  Learning Rate:      {lr:.2e}")
-        print(f"  {'─'*56}")
-        print(f"  Classification Metrics:")
-        print(f"    Accuracy:         {accuracy:.4f} ({accuracy*100:.2f}%)")
-        print(f"    Precision:        {precision:.4f}")
-        print(f"    Recall:           {recall:.4f}")
-        print(f"    F1 Score:         {f1:.4f}")
-        print(f"{'='*60}\n")
+        print(f"{'='*50}")
+        print(f"  Training Loss:   {train_loss:.4f}")
+        print(f"  Validation Loss: {eval_loss:.4f}")
+        print(f"  Learning Rate:   {lr:.2e}")
+        print(f"{'='*50}\n")
 
     def _display_summary(self) -> None:
         """Display training summary."""
-        print(f"\n{'='*60}")
+        print(f"\n{'='*50}")
         print("TRAINING SUMMARY")
-        print(f"{'='*60}")
+        print(f"{'='*50}")
         print(f"  Total Epochs: {len(self.epoch_metrics)}")
 
-        # Find best epoch by validation loss
-        best_loss_idx = min(
+        # Find best epoch
+        best_idx = min(
             range(len(self.epoch_metrics)),
             key=lambda i: self.epoch_metrics[i]["eval_loss"]
         )
-        best_loss_metrics = self.epoch_metrics[best_loss_idx]
+        best_metrics = self.epoch_metrics[best_idx]
 
-        print(f"\n  Best Model by Validation Loss:")
-        print(f"    Epoch:            {best_loss_metrics['epoch']}")
-        print(f"    Validation Loss:  {best_loss_metrics['eval_loss']:.4f}")
-        print(f"    Accuracy:         {best_loss_metrics['accuracy']:.4f}")
-        print(f"    F1 Score:         {best_loss_metrics['f1']:.4f}")
-
-        # Find best epoch by F1 score
-        if any(m['f1'] > 0 for m in self.epoch_metrics):
-            best_f1_idx = max(
-                range(len(self.epoch_metrics)),
-                key=lambda i: self.epoch_metrics[i]["f1"]
-            )
-            best_f1_metrics = self.epoch_metrics[best_f1_idx]
-
-            print(f"\n  Best Model by F1 Score:")
-            print(f"    Epoch:            {best_f1_metrics['epoch']}")
-            print(f"    F1 Score:         {best_f1_metrics['f1']:.4f}")
-            print(f"    Precision:        {best_f1_metrics['precision']:.4f}")
-            print(f"    Recall:           {best_f1_metrics['recall']:.4f}")
-            print(f"    Accuracy:         {best_f1_metrics['accuracy']:.4f}")
+        print(f"  Best Epoch: {best_metrics['epoch']}")
+        print(f"  Best Validation Loss: {best_metrics['eval_loss']:.4f}")
 
         # Show improvement
         if len(self.epoch_metrics) > 1:
@@ -244,13 +212,6 @@ class EpochMetricsCallback(TrainerCallback):
             final_loss = self.epoch_metrics[-1]["eval_loss"]
             improvement = first_loss - final_loss
 
-            print(f"\n  Overall Improvement:")
-            print(f"    Loss Reduction:   {improvement:+.4f}")
-            
-            if self.epoch_metrics[-1]['accuracy'] > 0:
-                first_acc = self.epoch_metrics[0]["accuracy"]
-                final_acc = self.epoch_metrics[-1]["accuracy"]
-                acc_improvement = (final_acc - first_acc) * 100
-                print(f"    Accuracy Gain:    {acc_improvement:+.2f}%")
+            print(f"  Loss Improvement: {improvement:+.4f}")
 
-        print(f"{'='*60}\n")
+        print(f"{'='*50}\n")

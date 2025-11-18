@@ -53,8 +53,7 @@ class VBLoRATrainer:
         self.output_config = output_config
 
         self.trainer = None
-        # Pass tokenizer to metrics computer for classification metrics
-        self.metrics_computer = MetricsComputer(tokenizer=tokenizer)
+        self.metrics_computer = MetricsComputer()
 
     def setup_trainer(self, show_epoch_metrics: bool = True) -> None:
         """
