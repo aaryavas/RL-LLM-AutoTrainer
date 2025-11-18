@@ -17,6 +17,7 @@ evaluate>=0.4.0
 # Environment and utilities
 python-dotenv>=1.0.0
 huggingface-hub>=0.17.0
+absl-py>=1.0.0
 
 # Optional but recommended
 sentencepiece>=0.1.99
