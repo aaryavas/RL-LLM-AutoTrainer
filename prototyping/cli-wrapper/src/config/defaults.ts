@@ -9,6 +9,7 @@ import {
   TrainingConfig,
   VBLoRAConfig,
   HardwareConfig,
+  FineTuneConfig,
 } from './types';
 
 // =============================================================================
@@ -182,4 +183,26 @@ export function getPresetChoices(): Array<{ name: string; value: string }> {
       value: key,
     })),
   ];
+}
+
+/**
+ * Get default fine-tuning configuration
+ */
+export function getDefaultFineTuneConfig(): FineTuneConfig {
+  return {
+    dataPath: '',
+    modelFamily: 'SmolLM2',
+    modelVariant: '360M',
+    training: DEFAULT_TRAINING,
+    vblora: DEFAULT_VBLORA,
+    hardware: DEFAULT_HARDWARE,
+    outputDir: './output/vblora_models',
+    testSize: 0.1,
+    valSize: 0.1,
+    textColumn: 'text',
+    labelColumn: 'label',
+    showEpochMetrics: true,
+    verbose: false,
+    dryRun: false,
+  };
 }

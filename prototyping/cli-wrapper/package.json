@@ -2,6 +2,7 @@
   "name": "synthetic-data-cli",
   "version": "1.0.0",
   "description": "TypeScript CLI wrapper for interactive synthetic data generator",
+  "type": "module",
   "main": "dist/index.js",
   "bin": {
     "synth-data": "./dist/index.js"
@@ -9,7 +10,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
+    "dev": "tsx src/index.ts",
+    "dev:tui": "tsx src/tui-entry.ts",
     "watch": "tsc --watch"
   },
   "keywords": [
@@ -22,6 +24,7 @@
   "license": "MIT",
   "dependencies": {
     "@inquirer/prompts": "^5.3.8",
+    "@opentui/core": "^0.1.46",
     "boxen": "^5.1.2",
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
@@ -30,6 +33,7 @@
   "devDependencies": {
     "@types/node": "^20.19.21",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
 }
