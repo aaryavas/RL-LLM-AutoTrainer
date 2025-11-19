@@ -21,7 +21,7 @@ That's it! The interactive CLI will guide you through the rest.
 
 **Verify Installation:**
 ```bash
-synth-data --version  # Should output: 1.0.0
+synth-data --version  # Should output: 1.1.0
 synth-data --help     # Shows usage information
 ./test.sh             # Run test suite (from cli-wrapper directory)
 ```
@@ -46,9 +46,14 @@ synth-data --help     # Shows usage information
 ---
 
 ## Overview
-- This repository contains prototyping tools for generating synthetic training data for LLM/RL workflows. The current prototype includes:
+- This repository contains prototyping tools for generating synthetic training data and fine-tuning LLMs. The current prototype includes:
   - A TypeScript/Node.js CLI wrapper that provides an interactive, user-friendly terminal interface.
-  - Python scripts that actually perform (or orchestrate) the data generation, using the Hugging Face ecosystem.
+  - Python scripts for data generation using the Hugging Face ecosystem.
+  - VB-LoRA fine-tuning module for efficient model adaptation.
+
+### Workflow
+1. **Generate synthetic data** - Configure labels, categories, and examples
+2. **Optional: Fine-tune a model** - Use VB-LoRA for memory-efficient fine-tuning on your generated data
 
 Stack and Tooling
 - Languages: TypeScript (Node.js), Python 3
@@ -61,13 +66,22 @@ Stack and Tooling
 Repository Structure
 - prototyping/
   - cli-wrapper/ — TypeScript CLI package
-    - src/index.ts — main CLI source (compiled to dist/index.js)
+    - src/
+      - index.ts — CLI entry point
+      - cli.ts — main orchestrator
+      - config/ — types and defaults
+      - steps/ — configuration step handlers
+      - runners/ — process spawners
+      - utils/ — display and dependency utilities
     - package.json — npm package with scripts and bin
     - tsconfig.json — TypeScript config
-    - install.sh — helper script to install/build/link CLI
-    - README.md — CLI-specific documentation
-  - interactive-data-gen.py — interactive Python front-end that guides the user and calls data-gen.py
-  - data-gen.py — Python generator invoked by the interactive script (see code for parameters)
+  - vblora/ — VB-LoRA fine-tuning module
+    - cli.py — fine-tuning CLI
+    - finetuning.py — main fine-tuning API
+    - config/ — configuration dataclasses
+    - core/ — data processing, model loading
+    - training/ — trainer and callbacks
+  - data-gen.py — Python generator for synthetic data
 
 Entry Points
 - synth-data (global command if linked) → prototyping/cli-wrapper/dist/index.js
@@ -125,16 +139,22 @@ npm link
 
 ### Step 2: Install Python Dependencies
 
-Install required Python packages:
+Install required Python packages for data generation:
 
 ```bash
 pip install python-dotenv pandas huggingface-hub transformers torch
 ```
 
-**Or using uv (if available):**
+**For fine-tuning, also install:**
 
 ```bash
-uv pip install python-dotenv pandas huggingface-hub transformers torch
+pip install peft accelerate bitsandbytes datasets evaluate scikit-learn nltk rouge_score
+```
+
+**Or install all from requirements:**
+
+```bash
+pip install -r prototyping/vblora/requirements.txt
 ```
 
 ### Step 3: Configure Hugging Face Token
@@ -204,6 +224,48 @@ Bypass the Node CLI and run Python directly:
 ```bash
 cd prototyping
 python3 interactive-data-gen.py
+```
+
+## 🤖 Fine-Tuning Configuration
+
+After generating synthetic data, the CLI will prompt you to optionally fine-tune a model. Here are the configurable options:
+
+### Model Selection
+- **Model Family**: Currently SmolLM2 (extensible for future models)
+- **Variants**: 135M, 360M, 1.7B
+- **Presets**: minimal, standard, aggressive
+
+### Training Parameters
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| Epochs | 3 | Number of training epochs |
+| Learning Rate | 2e-4 | Base learning rate |
+| Batch Size | 4 | Batch size per device |
+| Early Stopping | 3 | Patience in epochs |
+
+### VB-LoRA Parameters
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| Num Vectors | 90 | Vectors in vector bank |
+| Vector Length | 64 | Length of each vector |
+| LoRA Rank | 4 | Rank for low-rank adaptation |
+| LR Vector Bank | 1e-3 | Learning rate for vector bank |
+| LR Logits | 1e-2 | Learning rate for logits |
+
+### Hardware Settings
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| Bits | 4 | Quantization (4/8/16/32) |
+| BF16 | false | Use bfloat16 precision |
+| FP16 | false | Use float16 precision |
+
+### Direct Fine-Tuning (Python)
+
+You can also run fine-tuning directly:
+
+```bash
+cd prototyping/vblora
+python cli.py finetune data.csv --variant SmolLM2-360M --epochs 5
 ```
 
 ## 🛠️ Available Scripts
