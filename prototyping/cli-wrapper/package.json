@@ -2,7 +2,6 @@
   "name": "synthetic-data-cli",
   "version": "1.0.0",
   "description": "TypeScript CLI wrapper for interactive synthetic data generator",
-  "type": "module",
   "main": "dist/index.js",
   "bin": {
     "synth-data": "./dist/index.js"
