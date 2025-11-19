@@ -10,7 +10,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "dev:tui": "tsx src/tui-entry.ts",
+    "dev:tui": "bun run src/tui-entry.ts",
     "watch": "tsc --watch"
   },
   "keywords": [
