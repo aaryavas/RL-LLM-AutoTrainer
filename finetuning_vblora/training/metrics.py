@@ -1,6 +1,6 @@
 """
 Metrics computation for VB-LoRA training.
-Enhanced with BLEU and ROUGE metrics for text generation quality.
+Enhanced with BLEU, ROUGE, BERTScore, and CodeBERTScore metrics for text generation quality.
 """
 
 import numpy as np
@@ -15,7 +15,7 @@ class MetricsComputer:
     """
     Computes evaluation metrics for training.
     Uses Hugging Face evaluate library for standard metrics.
-    Includes BLEU and ROUGE metrics for text generation quality assessment.
+    Includes BLEU, ROUGE, BERTScore, and CodeBERTScore metrics for text generation quality assessment.
     """
 
     def __init__(self, tokenizer=None):
@@ -47,10 +47,18 @@ class MetricsComputer:
             logger.warning(f"Could not load ROUGE metric: {e}")
             self.metrics['rouge'] = None
 
+        try:
+            # Load BERTScore metric for semantic similarity
+            self.metrics['bertscore'] = evaluate.load('bertscore')
+            logger.info("BERTScore metric loaded successfully")
+        except Exception as e:
+            logger.warning(f"Could not load BERTScore metric: {e}")
+            self.metrics['bertscore'] = None
+
     def compute_metrics(self, eval_pred: Tuple) -> Dict[str, float]:
         """
         Compute metrics from evaluation predictions.
-        Includes token accuracy, BLEU, and ROUGE scores.
+        Includes token accuracy, BLEU, ROUGE, BERTScore, and CodeBERTScore.
 
         Args:
             eval_pred: Tuple of (predictions, labels)
@@ -143,14 +151,14 @@ class MetricsComputer:
         labels: np.ndarray,
     ) -> Dict[str, float]:
         """
-        Compute BLEU and ROUGE metrics for text generation quality.
+        Compute BLEU, ROUGE, BERTScore, and CodeBERTScore metrics for text generation quality.
 
         Args:
             predictions: Model predictions (logits)
             labels: Ground truth labels
 
         Returns:
-            Dictionary with BLEU and ROUGE metrics
+            Dictionary with BLEU, ROUGE, BERTScore, and CodeBERTScore metrics
         """
         # Get predicted tokens
         if len(predictions.shape) == 3:
@@ -184,6 +192,12 @@ class MetricsComputer:
                 "rouge1": 0.0,
                 "rouge2": 0.0,
                 "rougeL": 0.0,
+                "bertscore_precision": 0.0,
+                "bertscore_recall": 0.0,
+                "bertscore_f1": 0.0,
+                "codebertscore_precision": 0.0,
+                "codebertscore_recall": 0.0,
+                "codebertscore_f1": 0.0,
             }
 
         metrics_dict = {}
@@ -217,6 +231,36 @@ class MetricsComputer:
                 metrics_dict["rouge1"] = 0.0
                 metrics_dict["rouge2"] = 0.0
                 metrics_dict["rougeL"] = 0.0
+
+        # Compute BERTScore
+        if self.metrics.get('bertscore') is not None:
+            try:
+                bertscore_result = self.metrics['bertscore'].compute(
+                    predictions=pred_texts,
+                    references=label_texts,
+                    lang="en"
+                )
+                metrics_dict["bertscore_precision"] = float(np.mean(bertscore_result["precision"]))
+                metrics_dict["bertscore_recall"] = float(np.mean(bertscore_result["recall"]))
+                metrics_dict["bertscore_f1"] = float(np.mean(bertscore_result["f1"]))
+
+                # Compute CodeBERTScore (using microsoft/codebert-base)
+                codebertscore_result = self.metrics['bertscore'].compute(
+                    predictions=pred_texts,
+                    references=label_texts,
+                    model_type="microsoft/codebert-base"
+                )
+                metrics_dict["codebertscore_precision"] = float(np.mean(codebertscore_result["precision"]))
+                metrics_dict["codebertscore_recall"] = float(np.mean(codebertscore_result["recall"]))
+                metrics_dict["codebertscore_f1"] = float(np.mean(codebertscore_result["f1"]))
+            except Exception as e:
+                logger.warning(f"Error computing BERTScore/CodeBERTScore: {e}")
+                metrics_dict["bertscore_precision"] = 0.0
+                metrics_dict["bertscore_recall"] = 0.0
+                metrics_dict["bertscore_f1"] = 0.0
+                metrics_dict["codebertscore_precision"] = 0.0
+                metrics_dict["codebertscore_recall"] = 0.0
+                metrics_dict["codebertscore_f1"] = 0.0
 
         return metrics_dict
 
