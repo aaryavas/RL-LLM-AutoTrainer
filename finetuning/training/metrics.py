@@ -4,6 +4,7 @@ Enhanced with BLEU, ROUGE, BERTScore, and CodeBERTScore metrics for text generat
 """
 
 import numpy as np
+import pandas as pd
 import evaluate
 from typing import Dict, Any, Tuple, Optional
 import logging
@@ -279,3 +280,78 @@ class MetricsComputer:
             return float(perplexity)
         except OverflowError:
             return float("inf")
+
+    def identify_dpo_candidates(
+        self,
+        df: pd.DataFrame,
+        prediction_col: str = "prediction",
+        reference_col: str = "label",
+        threshold: float = 0.82
+    ) -> pd.DataFrame:
+        """
+        Identifies poor performing examples to be used for DPO training.
+
+        Args:
+            df: Pandas DataFrame containing predictions and references
+            prediction_col: Name of the column containing model predictions
+            reference_col: Name of the column containing ground truth labels
+            threshold: Score threshold below which examples are considered "failed"
+
+        Returns:
+            DataFrame containing the failed examples
+        """
+        # Ensure BERTScore metric is loaded
+        if self.metrics.get('bertscore') is None:
+            try:
+                self.metrics['bertscore'] = evaluate.load('bertscore')
+            except Exception as e:
+                logger.error(f"Could not load BERTScore metric: {e}")
+                return pd.DataFrame()
+
+        # Check/Calculate BERTScore
+        if 'bertscore_f1' not in df.columns:
+            logger.info("Calculating BERTScore for dataframe...")
+            try:
+                results = self.metrics['bertscore'].compute(
+                    predictions=df[prediction_col].tolist(),
+                    references=df[reference_col].tolist(),
+                    lang="en"
+                )
+                df['bertscore_f1'] = results['f1']
+            except Exception as e:
+                logger.error(f"Error calculating BERTScore: {e}")
+                df['bertscore_f1'] = 0.0
+
+        # Check/Calculate CodeBERTScore
+        if 'codebertscore_f1' not in df.columns:
+            logger.info("Calculating CodeBERTScore for dataframe...")
+            try:
+                results = self.metrics['bertscore'].compute(
+                    predictions=df[prediction_col].tolist(),
+                    references=df[reference_col].tolist(),
+                    model_type="microsoft/codebert-base"
+                )
+                df['codebertscore_f1'] = results['f1']
+            except Exception as e:
+                logger.error(f"Error calculating CodeBERTScore: {e}")
+                df['codebertscore_f1'] = 0.0
+
+        # Determine baseline metric
+        # We take the max of the averages to see which metric the model is generally performing "better" on,
+        # or which metric is more applicable (usually the higher one indicates better alignment)
+        avg_bert = df['bertscore_f1'].mean()
+        avg_code = df['codebertscore_f1'].mean()
+
+        target_metric = 'bertscore_f1' if avg_bert > avg_code else 'codebertscore_f1'
+        logger.info(f"Selected baseline metric: {target_metric} (BERT: {avg_bert:.4f}, CodeBERT: {avg_code:.4f})")
+
+        # Filter rows below threshold
+        failed_df = df[df[target_metric] < threshold].copy()
+
+        # Fallback: If no values meet the threshold, take the lowest 10%
+        if failed_df.empty and not df.empty:
+            logger.info(f"No examples found below threshold {threshold}. Using bottom 10%.")
+            cutoff = df[target_metric].quantile(0.10)
+            failed_df = df[df[target_metric] <= cutoff].copy()
+
+        return failed_df
