@@ -249,7 +249,8 @@ class MetricsComputer:
                 codebertscore_result = self.metrics['bertscore'].compute(
                     predictions=pred_texts,
                     references=label_texts,
-                    model_type="microsoft/codebert-base"
+                    model_type="microsoft/codebert-base",
+                    num_layers=12
                 )
                 metrics_dict["codebertscore_precision"] = float(np.mean(codebertscore_result["precision"]))
                 metrics_dict["codebertscore_recall"] = float(np.mean(codebertscore_result["recall"]))
@@ -329,7 +330,8 @@ class MetricsComputer:
                 results = self.metrics['bertscore'].compute(
                     predictions=df[prediction_col].tolist(),
                     references=df[reference_col].tolist(),
-                    model_type="microsoft/codebert-base"
+                    model_type="microsoft/codebert-base",
+                    num_layers=12
                 )
                 df['codebertscore_f1'] = results['f1']
             except Exception as e:
