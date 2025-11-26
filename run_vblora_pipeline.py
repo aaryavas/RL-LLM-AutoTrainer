@@ -15,6 +15,7 @@ sys.path.append(os.getcwd())
 try:
     from finetuning.training.metrics import MetricsComputer
     from finetuning.utils.merge_adapter import merge_adapter
+    from finetuning.utils.orpo_generator import ORPODataGenerator
 except ImportError:
     print("Could not import required modules. Make sure you are in the project root.")
     sys.exit(1)
@@ -78,23 +79,97 @@ def main():
         print(f"Merging SFT adapter failed: {e}")
         sys.exit(1)
 
+    # 2.5 Generate Data for ORPO
+    print("\n" + "="*50)
+    print("Step 2.5: Generating Rejected Responses for ORPO")
+    print("="*50)
+
+    orpo_data_path = os.path.join(args.output_dir, "orpo_data.csv")
+    
+    # Load SFT Merged Model for generation
+    print(f"Loading SFT merged model from: {sft_merged_dir}")
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(sft_merged_dir)
+        model = AutoModelForCausalLM.from_pretrained(
+            sft_merged_dir,
+            torch_dtype=torch.float16,
+            device_map="auto"
+        )
+        model.eval()
+    except Exception as e:
+        print(f"Failed to load SFT merged model: {e}")
+        sys.exit(1)
+
+    # Load original data
+    df = pd.read_csv(args.data_path)
+    # Assume 'text' is prompt, 'label' is chosen. 
+    # If columns are different, we might need args for them, but let's stick to defaults or simple detection.
+    prompt_col = 'text' if 'text' in df.columns else 'prompt'
+    chosen_col = 'label' if 'label' in df.columns else 'chosen'
+    
+    if prompt_col not in df.columns:
+        print(f"Error: Could not find prompt column (expected 'text' or 'prompt') in {args.data_path}")
+        sys.exit(1)
+
+    print(f"Generating rejected responses for {len(df)} samples...")
+    rejected_responses = []
+    
+    for idx, row in tqdm(df.iterrows(), total=len(df)):
+        prompt = row[prompt_col]
+        
+        if hasattr(tokenizer, "apply_chat_template"):
+            messages = [{"role": "user", "content": str(prompt)}]
+            input_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        else:
+            input_text = str(prompt)
+            
+        inputs = tokenizer(input_text, return_tensors="pt").to(model.device)
+        
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs, 
+                max_new_tokens=128, 
+                temperature=0.7,
+                do_sample=True,
+                pad_token_id=tokenizer.eos_token_id
+            )
+            
+        input_len = inputs.input_ids.shape[1]
+        generated_tokens = outputs[0][input_len:]
+        response = tokenizer.decode(generated_tokens, skip_special_tokens=True)
+        rejected_responses.append(response.strip())
+
+    # Create rejected dataframe
+    rejected_df = pd.DataFrame({'rejected_response': rejected_responses})
+    
+    # Use ORPODataGenerator
+    generator = ORPODataGenerator()
+    orpo_df = generator.create_orpo_dataset(
+        df=df,
+        rejected_df=rejected_df,
+        prompt_col=prompt_col,
+        chosen_col=chosen_col,
+        rejected_col='rejected_response'
+    )
+    
+    orpo_df.to_csv(orpo_data_path, index=False)
+    print(f"Saved ORPO dataset to {orpo_data_path}")
+    
+    # Free up memory
+    del model
+    del tokenizer
+    torch.cuda.empty_cache()
+
     # 3. Run ORPO CLI
     print("\n" + "="*50)
     print("Step 3: Running ORPO Fine-tuning")
     print("="*50)
     
-    # ORPO CLI arguments based on README
-    # Assuming data.csv has prompt/chosen/rejected or we map them
-    # If data.csv is generic text/label, ORPO might fail if it expects preference columns.
-    # The user asked to run on "data.csv". 
-    # If data.csv is SFT data (text/label), it might not work for ORPO (prompt/chosen/rejected).
-    # However, assuming the user provides a CSV that works for both or has the columns.
-    # Let's assume standard column names or defaults.
-    
+
     cmd_orpo = (
-        f"python3 finetuning/orpo/cli.py "
+        f"python3 -m finetuning.orpo.cli "
         f"--model_name {sft_merged_dir} "
-        f"--data_path {args.data_path} "
+        f"--data_path {orpo_data_path} "
         f"--output_dir {orpo_output_dir} "
         f"--epochs {args.epochs} "
         f"--batch_size {args.batch_size} "
