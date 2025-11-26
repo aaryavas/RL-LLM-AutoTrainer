@@ -331,9 +331,7 @@ class MetricsComputer:
                 results = self.metrics['bertscore'].compute(
                     predictions=df[prediction_col].tolist(),
                     references=df[reference_col].tolist(),
-                    model_type="microsoft/codebert-base",
-                    num_layers=12,
-                    rescale_with_baseline=False
+                    model_type="microsoft/codebert-base"
                 )
                 df['codebertscore_f1'] = results['f1']
             except Exception as e:
