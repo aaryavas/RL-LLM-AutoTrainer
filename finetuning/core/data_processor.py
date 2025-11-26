@@ -57,7 +57,13 @@ class VBLoRADataset(Dataset):
         output_text = str(self.outputs[idx])
 
         # Tokenize input and output
-        source = f"{self.tokenizer.bos_token}{input_text}"
+        # Use chat template if available to match inference
+        if hasattr(self.tokenizer, "apply_chat_template"):
+            messages = [{"role": "user", "content": input_text}]
+            source = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        else:
+            source = f"{self.tokenizer.bos_token}{input_text}"
+            
         target = f"{output_text}{self.tokenizer.eos_token}"
 
         source_ids = self.tokenizer(

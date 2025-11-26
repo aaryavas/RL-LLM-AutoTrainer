@@ -13,7 +13,7 @@ import json
 import logging
 
 from finetuning import SmolLM2VBLoRAFineTuner, split_synthetic_data
-from config import (
+from finetuning.config import (
     SMOLLM2_VARIANTS,
     PRESET_CONFIGS,
     get_variant_config,
@@ -146,10 +146,10 @@ def setup_finetune_parser(subparsers):
 
     # Training parameters
     train_group = finetune_parser.add_argument_group('Training options')
-    train_group.add_argument('--epochs', type=validate_positive_int, default=3,
-                           help='Number of training epochs (default: 3)')
-    train_group.add_argument('--lr', '--learning-rate', type=validate_positive_float, default=2e-4,
-                           help='Base learning rate (default: 2e-4)')
+    train_group.add_argument('--epochs', type=validate_positive_int, default=5,
+                           help='Number of training epochs (default: 5)')
+    train_group.add_argument('--lr', '--learning-rate', type=validate_positive_float, default=5e-4,
+                           help='Base learning rate (default: 5e-4)')
     train_group.add_argument('--batch-size', type=validate_positive_int, default=4,
                            help='Batch size per device (default: 4)')
     train_group.add_argument('--early-stopping', type=validate_positive_int, default=2,
@@ -161,8 +161,8 @@ def setup_finetune_parser(subparsers):
                              help='Number of vectors in vector bank (default: 90)')
     vblora_group.add_argument('--vector-length', type=validate_positive_int, default=64,
                          help='Length of each vector - must divide model dimensions evenly (default: 64)')
-    vblora_group.add_argument('--lora-r', type=validate_positive_int, default=4,
-                             help='LoRA rank (default: 4)')
+    vblora_group.add_argument('--lora-r', type=validate_positive_int, default=16,
+                             help='LoRA rank (default: 16)')
     vblora_group.add_argument('--lr-vector-bank', type=validate_positive_float, default=1e-3,
                              help='Learning rate for vector bank (default: 1e-3)')
     vblora_group.add_argument('--lr-logits', type=validate_positive_float, default=1e-2,

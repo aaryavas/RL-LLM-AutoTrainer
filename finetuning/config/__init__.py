@@ -2,14 +2,14 @@
 Configuration module for VB-LoRA fine-tuning.
 """
 
-from config.base_config import (
+from .base_config import (
     DataConfig,
     TrainingConfig,
     OutputConfig,
     HardwareConfig,
 )
-from config.vblora_config import VBLoRAConfig, VBLoRADefaults
-from config.model_variants import (
+from .vblora_config import VBLoRAConfig, VBLoRADefaults
+from .model_variants import (
     ModelVariantConfig,
     SMOLLM2_VARIANTS,
     PRESET_CONFIGS,

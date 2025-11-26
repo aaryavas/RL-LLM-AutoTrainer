@@ -9,21 +9,21 @@ from pathlib import Path
 from typing import Tuple, Dict, Any, Optional
 from dotenv import load_dotenv
 
-from config import (
+from .config import (
     DataConfig,
     TrainingConfig,
     VBLoRAConfig,
     OutputConfig,
     HardwareConfig,
 )
-from core import (
+from .core import (
     DataProcessor,
     TokenizerManager,
     ModelLoader,
     OptimizerFactory,
 )
-from training import VBLoRATrainer
-from utils import DataSplitter, ensure_dir, save_json
+from .training import VBLoRATrainer
+from .utils import DataSplitter, ensure_dir, save_json
 
 logger = logging.getLogger(__name__)
 

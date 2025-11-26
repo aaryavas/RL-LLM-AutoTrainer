@@ -12,9 +12,9 @@ class VBLoRAConfig:
     """Configuration for VB-LoRA specific parameters."""
 
     # Core VB-LoRA parameters
-    lora_r: int = 4  # LoRA rank
-    lora_alpha: float = 16  # LoRA scaling factor
-    lora_dropout: float = 0.05
+    lora_r: int = 16  # LoRA rank
+    lora_alpha: float = 32  # LoRA scaling factor
+    lora_dropout: float = 0.0
     num_vectors: int = 90  # Number of vectors in the vector bank
     vector_length: int = 64  # Changed from 160 -> 64 (must be multiple of 64, divides all SmolLM2 dims)
     save_only_topk_weights: bool = True

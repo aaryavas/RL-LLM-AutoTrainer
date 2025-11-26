@@ -7,8 +7,8 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 import logging
 
-from training.callbacks import SavePeftModelCallback, EpochMetricsCallback
-from training.metrics import MetricsComputer
+from .callbacks import SavePeftModelCallback, EpochMetricsCallback
+from .metrics import MetricsComputer
 
 logger = logging.getLogger(__name__)
 

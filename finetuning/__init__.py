@@ -5,7 +5,7 @@ This module provides a complete pipeline for fine-tuning language models
 using VB-LoRA (Vector Bank LoRA) with efficient memory usage through quantization.
 """
 
-from .finetuning import SmolLM2VBLoRAFineTuner
+from .finetuning import SmolLM2VBLoRAFineTuner, split_synthetic_data
 from .config import (
     DataConfig,
     TrainingConfig,
@@ -21,6 +21,7 @@ __version__ = "1.0.0"
 
 __all__ = [
     "SmolLM2VBLoRAFineTuner",
+    "split_synthetic_data",
     "DataConfig",
     "TrainingConfig",
     "VBLoRAConfig",

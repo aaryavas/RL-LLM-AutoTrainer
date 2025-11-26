@@ -35,7 +35,7 @@ class TrainingConfig:
     """Configuration for training parameters."""
 
     num_train_epochs: int = 3
-    learning_rate: float = 2e-4
+    learning_rate: float = 5e-4
     per_device_train_batch_size: int = 4
     per_device_eval_batch_size: int = 4
     gradient_accumulation_steps: int = 1

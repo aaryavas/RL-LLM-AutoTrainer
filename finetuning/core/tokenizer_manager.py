@@ -40,7 +40,7 @@ class TokenizerManager:
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_name_or_path,
-            padding_side="right",
+            padding_side="left",
             use_fast=False,
             trust_remote_code=False,
             use_auth_token=self.use_auth_token,
