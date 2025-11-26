@@ -82,8 +82,6 @@ export async function runDataGeneration(
   const outputFile = path.join(config.outputDir, `${timestamp}.csv`);
 
   const args = [
-    'run',
-    'python',
     dataGenPath,
     '--config',
     configPath,
@@ -106,7 +104,7 @@ export async function runDataGeneration(
   printInfo('You may be prompted for your Hugging Face token if not already configured.\n');
 
   return new Promise<string>((resolve, reject) => {
-    const dataGen = spawn('python', ['-m', 'uv', ...args], {
+    const dataGen = spawn('uv', ['run', 'python', ...args], {
       cwd: prototypingDir,
       stdio: 'inherit',
       shell: false,
