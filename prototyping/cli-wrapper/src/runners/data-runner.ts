@@ -59,6 +59,26 @@ function cleanupTempConfig(configPath: string): void {
 }
 
 /**
+ * Find the most recently created CSV file in a directory
+ */
+function findLatestCsvFile(dir: string): string | null {
+  try {
+    const files = fs.readdirSync(dir)
+      .filter(f => f.endsWith('.csv'))
+      .map(f => ({
+        name: f,
+        path: path.join(dir, f),
+        mtime: fs.statSync(path.join(dir, f)).mtime.getTime()
+      }))
+      .sort((a, b) => b.mtime - a.mtime);
+    
+    return files.length > 0 ? files[0].path : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Run data generation
  */
 export async function runDataGeneration(
@@ -71,15 +91,21 @@ export async function runDataGeneration(
 
   const configPath = createTempConfigFile(config);
 
-  // Generate timestamp-based filename to match Python script output
-  const now = new Date();
-  const timestamp = now.getFullYear().toString() +
-    (now.getMonth() + 1).toString().padStart(2, '0') +
-    now.getDate().toString().padStart(2, '0') + '_' +
-    now.getHours().toString().padStart(2, '0') +
-    now.getMinutes().toString().padStart(2, '0') +
-    now.getSeconds().toString().padStart(2, '0');
-  const outputFile = path.join(config.outputDir, `${timestamp}.csv`);
+  // Record files before generation to detect new files
+  const outputDir = path.isAbsolute(config.outputDir) 
+    ? config.outputDir 
+    : path.join(prototypingDir, config.outputDir);
+  
+  // Ensure output directory exists
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  
+  const filesBefore = new Set(
+    fs.existsSync(outputDir) 
+      ? fs.readdirSync(outputDir).filter(f => f.endsWith('.csv'))
+      : []
+  );
 
   const args = [
     dataGenPath,
@@ -94,7 +120,7 @@ export async function runDataGeneration(
     '--batch_size',
     config.batchSize.toString(),
     '--output_dir',
-    config.outputDir,
+    outputDir,
   ];
 
   if (config.saveReasoning) {
@@ -114,6 +140,20 @@ export async function runDataGeneration(
       cleanupTempConfig(configPath);
 
       if (code === 0) {
+        // Find the newly created file by comparing before/after
+        const filesAfter = fs.readdirSync(outputDir).filter(f => f.endsWith('.csv'));
+        const newFiles = filesAfter.filter(f => !filesBefore.has(f));
+        
+        let outputFile: string;
+        if (newFiles.length > 0) {
+          // Use the newest of the new files
+          outputFile = path.join(outputDir, newFiles.sort().reverse()[0]);
+        } else {
+          // Fallback: find the most recently modified file
+          const latestFile = findLatestCsvFile(outputDir);
+          outputFile = latestFile || path.join(outputDir, 'output.csv');
+        }
+
         printSuccess('Data generation completed successfully!');
         console.log(chalk.cyan(`📁 Output file: ${outputFile}`));
         resolve(outputFile);

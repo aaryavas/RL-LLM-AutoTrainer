@@ -12,11 +12,22 @@ import { printSuccess, printError } from '../utils/display';
 
 /**
  * Build CLI arguments from config
+ * @param config Fine-tuning configuration
+ * @param prototypingDir The prototyping directory for resolving relative paths
  */
-function buildCliArgs(config: FineTuneConfig): string[] {
+function buildCliArgs(config: FineTuneConfig, prototypingDir: string): string[] {
+  // Convert relative paths to absolute paths (relative to prototyping dir)
+  const dataPath = path.isAbsolute(config.dataPath) 
+    ? config.dataPath 
+    : path.resolve(prototypingDir, config.dataPath);
+  
+  const outputDir = path.isAbsolute(config.outputDir)
+    ? config.outputDir
+    : path.resolve(prototypingDir, config.outputDir);
+
   const args = [
     'finetune',
-    config.dataPath,
+    dataPath,
     '--model',
     getHuggingFaceModelName(config.modelFamily, config.modelVariant),
     // Training parameters
@@ -44,7 +55,7 @@ function buildCliArgs(config: FineTuneConfig): string[] {
     config.hardware.bits.toString(),
     // Output
     '--output-dir',
-    config.outputDir,
+    outputDir,
     // Data splitting
     '--test-size',
     config.testSize.toString(),
@@ -85,12 +96,13 @@ function buildCliArgs(config: FineTuneConfig): string[] {
 export async function runFineTuning(
   config: FineTuneConfig,
   vbloraCliPath: string,
-  vbloraDir: string
+  vbloraDir: string,
+  prototypingDir: string
 ): Promise<void> {
   console.log(chalk.bold.green('\n🚀 STARTING FINE-TUNING'));
   console.log(chalk.gray('─'.repeat(50)));
 
-  const args = buildCliArgs(config);
+  const args = buildCliArgs(config, prototypingDir);
 
   console.log(chalk.cyan('\n📋 Running VB-LoRA fine-tuning with:'));
   console.log(chalk.gray(`  python ${path.basename(vbloraCliPath)} ${args.join(' ')}\n`));

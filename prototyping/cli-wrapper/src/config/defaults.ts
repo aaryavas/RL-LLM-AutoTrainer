@@ -53,23 +53,23 @@ export const PRESET_REGISTRY: PresetRegistry = {
     batchSize: 8,
     learningRate: 3e-4,
     numVectors: 60,
-    loraR: 2,
+    loraR: 4,
   },
   standard: {
     description: 'Balanced training for most use cases',
-    epochs: 3,
+    epochs: 5,
     batchSize: 4,
-    learningRate: 2e-4,
+    learningRate: 5e-4,
     numVectors: 90,
-    loraR: 4,
+    loraR: 16,
   },
   aggressive: {
     description: 'High capacity for complex tasks',
-    epochs: 5,
+    epochs: 10,
     batchSize: 2,
     learningRate: 1e-4,
     numVectors: 120,
-    loraR: 8,
+    loraR: 32,
   },
 };
 
@@ -78,16 +78,16 @@ export const PRESET_REGISTRY: PresetRegistry = {
 // =============================================================================
 
 export const DEFAULT_TRAINING: TrainingConfig = {
-  epochs: 3,
-  learningRate: 2e-4,
+  epochs: 5,
+  learningRate: 5e-4,
   batchSize: 4,
-  earlyStoppingPatience: 3,
+  earlyStoppingPatience: 2,
 };
 
 export const DEFAULT_VBLORA: VBLoRAConfig = {
   numVectors: 90,
   vectorLength: 64,
-  loraR: 4,
+  loraR: 16,
   lrVectorBank: 1e-3,
   lrLogits: 1e-2,
 };

@@ -40,7 +40,7 @@ export class SyntheticDataCLI {
     // __dirname will be cli-wrapper/dist after compilation
     this.prototypingDir = path.join(__dirname, '../..');
     this.dataGenScript = path.join(this.prototypingDir, 'data-gen.py');
-    this.vbloraDir = path.join(this.prototypingDir, 'vblora');
+    this.vbloraDir = path.join(this.prototypingDir, 'finetuning/finetuners');
     this.vbloraCliPath = path.join(this.vbloraDir, 'cli.py');
   }
 
@@ -146,7 +146,8 @@ export class SyntheticDataCLI {
     await runFineTuning(
       this.fineTuneConfig,
       this.vbloraCliPath,
-      this.vbloraDir
+      this.vbloraDir,
+      this.prototypingDir
     );
 
     console.log(chalk.cyan('\n✨ All done! Your model is fine-tuned and ready.'));
