@@ -16,6 +16,7 @@ from .model_variants import (
     get_variant_config,
     get_preset_config,
 )
+from .orpo_config import ORPOSpecificConfig
 
 __all__ = [
     "DataConfig",
@@ -29,4 +30,5 @@ __all__ = [
     "PRESET_CONFIGS",
     "get_variant_config",
     "get_preset_config",
+    "ORPOSpecificConfig",
 ]

@@ -17,7 +17,7 @@ from .config import (
     HardwareConfig,
 )
 from .core import (
-    DataProcessor,
+    VBLoRADataProcessor,
     TokenizerManager,
     ModelLoader,
     OptimizerFactory,
@@ -278,7 +278,7 @@ class SmolLM2VBLoRAFineTuner:
         """Prepare datasets."""
         logger.info("Preparing datasets")
 
-        self.data_processor = DataProcessor(
+        self.data_processor = VBLoRADataProcessor(
             tokenizer=tokenizer,
             source_max_len=self.data_config.source_max_len,
             target_max_len=self.data_config.target_max_len,
