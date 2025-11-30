@@ -1,5 +1,5 @@
 [project]
-name = "finetuning-vblora"
+name = "rl-llm-autotrainer"
 version = "0.1.0"
 description = ""
 authors = [

@@ -1,20 +1,18 @@
 """This is the replication of the intel tool"""
 
-"""Import packages"""
 import argparse
 import importlib.util
 import os
 import random
-import re
 import sys
 from datetime import datetime
-from typing import Dict, List, Tuple
-from dotenv import load_dotenv
-import getpass
+from typing import Dict, List
 
+import outlines
 import pandas as pd
+from dotenv import load_dotenv
 from huggingface_hub import login
-from transformers import pipeline
+from pydantic import BaseModel, Field
 
 #TODO: make sure to setup uv config file to install the pacakges
 
@@ -26,7 +24,6 @@ def read_token() -> None:
     load_dotenv()
     token = os.getenv("HF_TOKEN")
     login(token)
-
 
 
 """Validator for command line arguments"""
@@ -54,56 +51,9 @@ def validate_positive_integer(value: str) -> int:
         raise argparse.ArgumentTypeError(f"Invalid integer value: {value}")
 
 
-
-def parse_string(input_string: str) -> Tuple[str, str]:
-    """
-    Parses a string containing `OUTPUT:` and `REASONING:` sections and extracts their values.
-
-    Args:
-        input_string (str): The input string containing `OUTPUT:` and `REASONING:` labels.
-
-    Returns:
-        Tuple[str, str]: A tuple containing two strings:
-                         - The content following `OUTPUT:`.
-                         - The content following `REASONING:`.
-
-    Raises:
-        ValueError: If the input string does not match the expected format with both `OUTPUT:` and `REASONING:` sections.
-
-    Note:
-        - The function is case-sensitive and assumes `OUTPUT:` and `REASONING:` are correctly capitalized.
-        - If the format is not found, it will attempt fallback parsing or use the raw input.
-    """
-    # Use regular expressions to extract OUTPUT and REASONING
-    match = re.search(r"OUTPUT:\s*(.+?)\s*REASONING:\s*(.+)", input_string, re.DOTALL)
-
-    if match:
-        # Extract the matched groups: output and reasoning
-        output = match.group(1).strip()
-        reasoning = match.group(2).strip()
-        return output, reasoning
-    
-    # Fallback: Try case-insensitive matching
-    match = re.search(r"output:\s*(.+?)\s*reasoning:\s*(.+)", input_string, re.DOTALL | re.IGNORECASE)
-    if match:
-        output = match.group(1).strip()
-        reasoning = match.group(2).strip()
-        print(f"⚠️  Warning: Model used lowercase format. Output parsed successfully.")
-        return output, reasoning
-    
-    # Fallback: Check if only OUTPUT is present
-    match = re.search(r"OUTPUT:\s*(.+)", input_string, re.DOTALL)
-    if match:
-        output = match.group(1).strip()
-        reasoning = "No reasoning provided by model"
-        print(f"⚠️  Warning: No REASONING found. Using output only.")
-        return output, reasoning
-    
-    # Final fallback: Use the entire response as output
-    print(f"⚠️  Warning: Response format not recognized. Using raw output.")
-    print(f"Raw response: {input_string[:200]}...")  # Print first 200 chars for debugging
-    return input_string.strip(), "Format not recognized - raw output used"
-
+class SyntheticData(BaseModel):
+    output: str = Field(..., description="The synthetic data output")
+    reasoning: str = Field(..., description="The reasoning behind the generated output")
 
 
 def sdg(
@@ -150,6 +100,10 @@ def sdg(
         f"\U0001f680  Synthetic data will be appended to {output_path} in {num_batches} batch(es)."
     )
 
+    # Initialize outlines model
+    model_instance = outlines.models.transformers(model)
+    generator = outlines.generate.json(model_instance, SyntheticData)
+
     for batch in range(num_batches):
         # Calculate the start and end indices for the current batch
         start = batch * batch_size
@@ -169,8 +123,9 @@ def sdg(
             random_type = random.choices(
                 categories_types[batch_random_categories[i - start]]
             )
-            prompt = f"""You should create synthetic data for specified labels and categories. 
-            This is especially useful for {use_case}.
+            
+            # Construct the prompt
+            prompt = f"""You are a helpful assistant designed to generate synthetic data for {use_case} with labels {labels} in categories {categories}.
 
             *Label Descriptions*
             {label_descriptions}
@@ -182,44 +137,30 @@ def sdg(
 
             Generate one output for the classification below.
             You may use the examples I have provided as a guide, but you cannot simply modify or rewrite them.
-            Only return the OUTPUT and REASONING. 
-            Do not return the LABEL, CATEGORY, or TYPE.
-
+            
             LABEL: {batch_random_labels[i - start]}
             CATEGORY: {batch_random_categories[i - start]}
             TYPE: {random_type}
-            OUTPUT:
-            REASONING:
             """
-            messages = [
-                {
-                    "role": "system",
-                    "content": f"You are a helpful assistant designed to generate synthetic data for {use_case} with labels {labels} in categories {categories}.",
-                },
-                {"role": "user", "content": prompt},
-            ]
-            generator = pipeline("text-generation", model=model)
-            result = generator(messages, max_new_tokens=max_new_tokens)[0][
-                "generated_text"
-            ][-1]["content"]
+
+            # Generate structured data
+            result = generator(prompt, max_tokens=max_new_tokens)
 
             # Debug: Print raw outputs (helpful for troubleshooting format issues)
             if i == start:  # Print the first result of each batch for debugging
                 print(f"\n📝 Sample model output:")
                 print(f"{'='*50}")
-                print(result[:300] if len(result) > 300 else result)
+                print(result)
                 print(f"{'='*50}\n")
 
-            text, reasoning = parse_string(result)
-
             entry = {
-                "text": text,
+                "text": result.output,
                 "label": batch_random_labels[i - start],
                 "model": model,
             }
 
             if save_reasoning:
-                entry["reasoning"] = reasoning
+                entry["reasoning"] = result.reasoning
 
             batch_data.append(entry)
 
