@@ -11,7 +11,7 @@ from typing import Dict, List
 import outlines
 import pandas as pd
 from dotenv import load_dotenv
-from huggingface_hub import login
+from huggingface_hub import login, whoami, HFApiError
 from pydantic import BaseModel, Field
 
 #TODO: make sure to setup uv config file to install the pacakges
@@ -22,8 +22,11 @@ def read_token() -> None:
     This will read the token from the user, it necessary, call this function in the CLI tool
     """
     load_dotenv()
-    token = os.getenv("HF_TOKEN")
-    login(token)
+    try:
+       print(f"Logged into Hugging Face as {whoami()}")
+    except HFApiError:
+        token = os.getenv("HF_TOKEN")
+        login(token)
 
 
 """Validator for command line arguments"""
@@ -189,7 +192,7 @@ def main() -> None:
     Raises:
         SystemExit: If an error occurs during token reading or argument parsing.
     """
-
+    if
     read_token()
 
     parser = argparse.ArgumentParser(
