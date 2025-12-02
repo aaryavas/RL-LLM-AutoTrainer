@@ -7,13 +7,13 @@ by walking them through all the necessary configuration steps and then calling d
 with the appropriate parameters.
 """
 
-import os
-import sys
-import subprocess
-import tempfile
-from typing import Dict, List, Tuple, Optional
 import json
+import os
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 
 class InteractiveDataGenerator:
@@ -44,6 +44,7 @@ class InteractiveDataGenerator:
             ('huggingface_hub', 'huggingface-hub'),
             ('transformers', 'transformers'),
             ('torch', 'torch'),
+            ('outlines', 'outlines'),
         ]
         
         missing_packages = []
@@ -273,13 +274,16 @@ class InteractiveDataGenerator:
         print("-" * 40)
         print("Provide examples that show the AI how to generate data in your desired format.")
         print("Each example should include: LABEL, CATEGORY, TYPE, OUTPUT, and REASONING.")
+        print("IMPORTANT: Examples must be in JSON format.")
         print()
         print("Example format:")
         print("LABEL: positive")
         print("CATEGORY: customer_service")
         print("TYPE: compliment")
-        print("OUTPUT: Thank you so much for the excellent service!")
-        print("REASONING: This expresses gratitude and praise, indicating positive sentiment.")
+        print('''{
+    "output": "Thank you so much for the excellent service!",
+    "reasoning": "This expresses gratitude and praise, indicating positive sentiment."
+}''')
         print()
         
         num_examples = int(self.get_user_input(

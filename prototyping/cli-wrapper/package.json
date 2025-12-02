@@ -1,6 +1,6 @@
 {
   "name": "synthetic-data-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TypeScript CLI wrapper for interactive synthetic data generator",
   "main": "dist/index.js",
   "bin": {
@@ -30,6 +30,6 @@
   "devDependencies": {
     "@types/node": "^20.19.21",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.9.3"
   }
 }
