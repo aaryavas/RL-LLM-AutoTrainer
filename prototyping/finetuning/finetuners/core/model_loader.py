@@ -2,11 +2,12 @@
 Model loading and VB-LoRA configuration for fine-tuning.
 """
 
-import torch
-from transformers import AutoModelForCausalLM, BitsAndBytesConfig
-from peft import get_peft_model, prepare_model_for_kbit_training, VBLoRAConfig
-from typing import Optional, List
 import logging
+from typing import List, Optional
+
+import torch
+from peft import VBLoRAConfig, get_peft_model, prepare_model_for_kbit_training
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
 logger = logging.getLogger(__name__)
 
@@ -184,6 +185,7 @@ class ModelLoader:
 
         # Handle distributed training
         import os
+
         if os.environ.get("LOCAL_RANK") is not None:
             local_rank = int(os.environ.get("LOCAL_RANK", "0"))
             return {"": max_memory[local_rank]}
