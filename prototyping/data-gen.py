@@ -4,17 +4,18 @@ import argparse
 import importlib.util
 import os
 import random
+import re
 import sys
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import outlines
 import pandas as pd
 from dotenv import load_dotenv
-from huggingface_hub import login, whoami, HFApiError
+from huggingface_hub import login, whoami
 from pydantic import BaseModel, Field
 
-#TODO: make sure to setup uv config file to install the pacakges
+# TODO: make sure to setup pyproject.toml config file to install the packages
 
 
 def read_token() -> None:
@@ -23,13 +24,16 @@ def read_token() -> None:
     """
     load_dotenv()
     try:
-       print(f"Logged into Hugging Face as {whoami()}")
-    except HFApiError:
+        w = whoami()
+        print(f"Logged in as {w['name']}")
+    except Exception:
         token = os.getenv("HF_TOKEN")
         login(token)
 
 
 """Validator for command line arguments"""
+
+
 def validate_positive_integer(value: str) -> int:
     """
     Validate that the input is a positive integer.
@@ -54,9 +58,58 @@ def validate_positive_integer(value: str) -> int:
         raise argparse.ArgumentTypeError(f"Invalid integer value: {value}")
 
 
-class SyntheticData(BaseModel):
-    output: str = Field(..., description="The synthetic data output")
-    reasoning: str = Field(..., description="The reasoning behind the generated output")
+def parse_string(input_string: str) -> Tuple[str, str]:
+    """
+    Parses a string containing `OUTPUT:` and `REASONING:` sections and extracts their values.
+
+    Args:
+        input_string (str): The input string containing `OUTPUT:` and `REASONING:` labels.
+
+    Returns:
+        Tuple[str, str]: A tuple containing two strings:
+                         - The content following `OUTPUT:`.
+                         - The content following `REASONING:`.
+
+    Raises:
+        ValueError: If the input string does not match the expected format with both `OUTPUT:` and `REASONING:` sections.
+
+    Note:
+        - The function is case-sensitive and assumes `OUTPUT:` and `REASONING:` are correctly capitalized.
+        - If the format is not found, it will attempt fallback parsing or use the raw input.
+    """
+    # Use regular expressions to extract OUTPUT and REASONING
+    match = re.search(r"OUTPUT:\s*(.+?)\s*REASONING:\s*(.+)", input_string, re.DOTALL)
+
+    if match:
+        # Extract the matched groups: output and reasoning
+        output = match.group(1).strip()
+        reasoning = match.group(2).strip()
+        return output, reasoning
+
+    # Fallback: Try case-insensitive matching
+    match = re.search(
+        r"output:\s*(.+?)\s*reasoning:\s*(.+)", input_string, re.DOTALL | re.IGNORECASE
+    )
+    if match:
+        output = match.group(1).strip()
+        reasoning = match.group(2).strip()
+        print(f"⚠️  Warning: Model used lowercase format. Output parsed successfully.")
+        return output, reasoning
+
+    # Fallback: Check if only OUTPUT is present
+    match = re.search(r"OUTPUT:\s*(.+)", input_string, re.DOTALL)
+    if match:
+        output = match.group(1).strip()
+        reasoning = "No reasoning provided by model"
+        print(f"⚠️  Warning: No REASONING found. Using output only.")
+        return output, reasoning
+
+    # Final fallback: Use the entire response as output
+    print(f"⚠️  Warning: Response format not recognized. Using raw output.")
+    print(
+        f"Raw response: {input_string[:200]}..."
+    )  # Print first 200 chars for debugging
+    return input_string.strip(), "Format not recognized - raw output used"
 
 
 def sdg(
@@ -96,39 +149,33 @@ def sdg(
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f"{timestamp}.csv")
 
+    # Prepare all prompts first
+    prompts = []
+    batch_metadata = []
+
+    print(f"\U0001f680  Generating {sample_size} prompts...")
+
     # If sample_size is not divisible by batch_size, an extra batch is added
     num_batches = (sample_size + batch_size - 1) // batch_size
-
-    print(
-        f"\U0001f680  Synthetic data will be appended to {output_path} in {num_batches} batch(es)."
-    )
-
-    # Initialize outlines model
-    model_instance = outlines.models.transformers(model)
-    generator = outlines.generate.json(model_instance, SyntheticData)
 
     for batch in range(num_batches):
         # Calculate the start and end indices for the current batch
         start = batch * batch_size
         end = min(start + batch_size, sample_size)
 
-        # Store results of the current batch
-        batch_data = []
-
         # Assign random labels to the current batch
-        batch_random_labels = random.choices(labels, k=batch_size)
+        batch_random_labels = random.choices(labels, k=end - start)
 
         # Assign random categories to the current batch
-        batch_random_categories = random.choices(categories, k=batch_size)
+        batch_random_categories = random.choices(categories, k=end - start)
 
         for i in range(start, end):
             # Assign a random type to the ith category
             random_type = random.choices(
                 categories_types[batch_random_categories[i - start]]
             )
-            
-            # Construct the prompt
-            prompt = f"""You are a helpful assistant designed to generate synthetic data for {use_case} with labels {labels} in categories {categories}.
+            prompt_text = f"""You should create synthetic data for specified labels and categories. 
+            This is especially useful for {use_case}.
 
             *Label Descriptions*
             {label_descriptions}
@@ -140,46 +187,146 @@ def sdg(
 
             Generate one output for the classification below.
             You may use the examples I have provided as a guide, but you cannot simply modify or rewrite them.
-            
+            Only return the OUTPUT and REASONING. 
+            Do not return the LABEL, CATEGORY, or TYPE.
+
             LABEL: {batch_random_labels[i - start]}
             CATEGORY: {batch_random_categories[i - start]}
             TYPE: {random_type}
+            OUTPUT:
+            REASONING:
             """
 
-            # Generate structured data
-            result = generator(prompt, max_tokens=max_new_tokens)
+            # Format prompt for the model (using apply_chat_template logic if needed,
+            # but vLLM usually takes raw text or tokens. For chat models, we might need to format it manually
+            # or use the tokenizer. Here we'll construct the chat format manually as vLLM's generate takes string)
+            # However, vLLM's LLM.generate takes a prompt string.
+            # If the model expects a chat template, we should format it.
+            # For simplicity and consistency with previous code, we'll use the same structure.
+            # But vLLM doesn't automatically apply chat templates in `generate` unless we use `chat` method (if available) or format it ourselves.
+            # Let's assume we pass the raw prompt or a formatted string.
+            # The previous code used `pipeline("text-generation")` with a list of messages.
+            # We can use the tokenizer to apply the chat template if we want to be robust,
+            # but for now let's stick to the prompt construction.
 
-            # Debug: Print raw outputs (helpful for troubleshooting format issues)
-            if i == start:  # Print the first result of each batch for debugging
-                print(f"\n📝 Sample model output:")
-                print(f"{'='*50}")
-                print(result)
-                print(f"{'='*50}\n")
+            # Actually, vLLM supports `chat` method in newer versions or we can just format it.
+            # Let's use the `messages` format and apply the template using the tokenizer if possible,
+            # or just construct the prompt string if we know the template.
+            # Given the previous code used `messages`, let's try to stick to that if vLLM supports it,
+            # otherwise we might need to load the tokenizer.
 
-            entry = {
-                "text": result.output,
-                "label": batch_random_labels[i - start],
-                "model": model,
-            }
+            # To keep it simple and efficient, let's just construct the prompt string.
+            # But wait, the previous code used `messages` list.
+            # We should probably use `llm.chat` if available or format it.
+            # Since I don't want to overcomplicate with tokenizer loading just for template,
+            # I will check if I can use `llm.chat`.
+            # If not, I will assume the model can handle the prompt or I'll just format it as a standard chat prompt.
 
-            if save_reasoning:
-                entry["reasoning"] = result.reasoning
+            # Let's use the `LLM` class. It has a `generate` method.
+            # We can pass a list of prompts.
+            # We need to format the messages into a single string.
+            # Since we don't have the tokenizer easily accessible without loading it,
+            # and we want to be hardware agnostic/optimized.
 
-            batch_data.append(entry)
+            # Let's use a simple formatting for now, or better, use the tokenizer from vllm's engine if accessible.
+            # Actually, vLLM's `LLM` class can take `prompt_token_ids` or `prompt`.
 
-        # Convert the batch results to a DataFrame
-        batch_df = pd.DataFrame(batch_data)
+            # Let's just use the raw prompt text for now, but formatted as a user/system message if the model requires it.
+            # The previous code used:
+            # messages = [
+            #     {"role": "system", "content": ...},
+            #     {"role": "user", "content": ...},
+            # ]
+            # generator(messages)
 
-        # Append the DataFrame to the CSV file
-        if batch == 0:
-            # If it's the first batch, write headers
-            batch_df.to_csv(output_path, mode="w", index=False)
-        else:
-            # For subsequent batches, append without headers
-            batch_df.to_csv(output_path, mode="a", header=False, index=False)
-        print(f"\U000026a1  Saved batch number {batch + 1}/{num_batches}")
+            # I'll use a simple formatting that works for Llama 3 (which is the default model).
+            # <|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{user_prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n
+
+            system_content = f"You are a helpful assistant designed to generate synthetic data for {use_case} with labels {labels} in categories {categories}."
+
+            # We will rely on vLLM's ability to handle this or just pass the text.
+            # Ideally we should use the tokenizer.
+            # I will add a helper to apply chat template using the model's tokenizer after initializing LLM.
+
+            prompts.append(prompt_text)  # We will format this later after loading LLM
+
+            batch_metadata.append(
+                {
+                    "label": batch_random_labels[i - start],
+                    "system_content": system_content,
+                }
+            )
+
+    print(f"\U0001f680  Initializing vLLM engine with model: {model}")
+
+    # Initialize vLLM
+    from vllm import LLM, SamplingParams
+
+    # Set up sampling parameters
+    sampling_params = SamplingParams(
+        temperature=0.7,  # Default, can be adjusted
+        top_p=0.9,
+        max_tokens=max_new_tokens,
+    )
+
+    # Initialize the LLM
+    # Note: tensor_parallel_size should be set based on available GPUs.
+    # For now we default to 1, but user can change it via args if we add it.
+    # We'll rely on vLLM's default or env vars.
+    llm = LLM(model=model, max_model_len=8192, max_num_batched_tokens=8192,gpu_memory_utilization=.8,)
+
+    # Apply chat template to prompts
+    tokenizer = llm.get_tokenizer()
+    formatted_prompts = []
+    for i, prompt in enumerate(prompts):
+        messages = [
+            {"role": "system", "content": batch_metadata[i]["system_content"]},
+            {"role": "user", "content": prompt},
+        ]
+        # apply_chat_template returns a string
+        formatted_prompt = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        formatted_prompts.append(formatted_prompt)
+
+    print(f"\U0001f680  Starting generation...")
+    outputs = llm.generate(formatted_prompts, sampling_params, )
+
+    print(f"\U0001f680  Processing outputs and saving to {output_path}...")
+
+    all_data = []
+    for i, output in enumerate(outputs):
+        generated_text = output.outputs[0].text
+
+        # Debug: Print first output
+        if i == 0:
+            print(f"\n📝 Sample model output:")
+            print(f"{'=' * 50}")
+            print(generated_text[:300] if len(generated_text) > 300 else generated_text)
+            print(f"{'=' * 50}\n")
+
+        text, reasoning = parse_string(generated_text)
+
+        entry = {
+            "text": text,
+            "label": batch_metadata[i]["label"],
+            "model": model,
+        }
+
+        if save_reasoning:
+            entry["reasoning"] = reasoning
+
+        all_data.append(entry)
+
+    # Save all data
+    df = pd.DataFrame(all_data)
+    df.to_csv(output_path, index=False)
+    print(f"\U000026a1  Saved {len(all_data)} samples to {output_path}")
+
 
 """"This is the main function and this is how the user can interact with the code through the command line"""
+
+
 def main() -> None:
     """
     Main entry point for running the synthetic data generator.
@@ -192,7 +339,7 @@ def main() -> None:
     Raises:
         SystemExit: If an error occurs during token reading or argument parsing.
     """
-    if
+
     read_token()
 
     parser = argparse.ArgumentParser(
