@@ -117,8 +117,6 @@ export async function runDataGeneration(
     config.model,
     '--max_new_tokens',
     config.maxTokens.toString(),
-    '--batch_size',
-    config.batchSize.toString(),
     '--output_dir',
     outputDir,
   ];
@@ -130,7 +128,7 @@ export async function runDataGeneration(
   printInfo('You may be prompted for your Hugging Face token if not already configured.\n');
 
   return new Promise<string>((resolve, reject) => {
-    const dataGen = spawn('uv', ['run', 'python', ...args], {
+    const dataGen = spawn("python", [...args], {
       cwd: prototypingDir,
       stdio: 'inherit',
       shell: false,
