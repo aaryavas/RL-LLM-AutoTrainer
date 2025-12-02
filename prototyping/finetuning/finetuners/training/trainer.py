@@ -2,12 +2,22 @@
 VB-LoRA trainer orchestration.
 """
 
-from transformers import Trainer, TrainingArguments, EarlyStoppingCallback
-from typing import Optional, Dict, Any
-from pathlib import Path
 import logging
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-from .callbacks import SavePeftModelCallback, EpochMetricsCallback
+from peft import VBLoRAConfig
+from transformers import (
+    EarlyStoppingCallback,
+    PreTrainedModel,
+    PreTrainedTokenizer,
+    Trainer,
+    TrainingArguments,
+)
+from trl import ORPOConfig, ORPOTrainer
+
+from ..config.vblora_config import VBLoRADefaults
+from .callbacks import EpochMetricsCallback, SavePeftModelCallback
 from .metrics import MetricsComputer
 
 logger = logging.getLogger(__name__)
@@ -145,15 +155,22 @@ class VBLoRATrainer:
         if not run_name:
             # Generate run name if not provided
             from datetime import datetime
+
             run_name = f"vblora_finetune_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         return TrainingArguments(
             output_dir=self.output_config["output_dir"],
             run_name=run_name,
             num_train_epochs=self.training_config["num_train_epochs"],
-            per_device_train_batch_size=self.training_config["per_device_train_batch_size"],
-            per_device_eval_batch_size=self.training_config["per_device_eval_batch_size"],
-            gradient_accumulation_steps=self.training_config["gradient_accumulation_steps"],
+            per_device_train_batch_size=self.training_config[
+                "per_device_train_batch_size"
+            ],
+            per_device_eval_batch_size=self.training_config[
+                "per_device_eval_batch_size"
+            ],
+            gradient_accumulation_steps=self.training_config[
+                "gradient_accumulation_steps"
+            ],
             warmup_steps=self.training_config["warmup_steps"],
             weight_decay=self.training_config["weight_decay"],
             logging_steps=self.training_config["logging_steps"],
@@ -198,7 +215,9 @@ class VBLoRATrainer:
         if self.training_config.get("early_stopping_patience"):
             callbacks.append(
                 EarlyStoppingCallback(
-                    early_stopping_patience=self.training_config["early_stopping_patience"]
+                    early_stopping_patience=self.training_config[
+                        "early_stopping_patience"
+                    ]
                 )
             )
 
@@ -219,20 +238,22 @@ class VBLoRATrainer:
             raise RuntimeError("Trainer not setup. Call setup_trainer() first.")
 
         return self.trainer
+
+
 class ORPOTrainerWrapper:
     """
     Wrapper around trl.ORPOTrainer to handle configuration and setup.
     """
 
     def __init__(
-            self,
-            model: PreTrainedModel,
-            tokenizer: PreTrainedTokenizer,
-            train_dataset,
-            eval_dataset,
-            training_config: Dict[str, Any],
-            orpo_config: Dict[str, Any],
-            output_config: Dict[str, Any],
+        self,
+        model: PreTrainedModel,
+        tokenizer: PreTrainedTokenizer,
+        train_dataset,
+        eval_dataset,
+        training_config: Dict[str, Any],
+        orpo_config: Dict[str, Any],
+        output_config: Dict[str, Any],
     ):
         self.model = model
         self.tokenizer = tokenizer
@@ -253,7 +274,10 @@ class ORPOTrainerWrapper:
         # ORPOConfig inherits from TrainingArguments, so we can pass standard training args here too.
 
         # Calculate max_length
-        max_length = self.orpo_config["max_prompt_length"] + self.orpo_config["max_completion_length"]
+        max_length = (
+            self.orpo_config["max_prompt_length"]
+            + self.orpo_config["max_completion_length"]
+        )
 
         args = ORPOConfig(
             output_dir=self.output_config["output_dir"],
@@ -263,13 +287,18 @@ class ORPOTrainerWrapper:
             max_completion_length=self.orpo_config["max_completion_length"],
             max_length=max_length,
             disable_dropout=self.orpo_config["disable_dropout"],
-
             # Standard Training Args
             num_train_epochs=self.training_config["num_train_epochs"],
             learning_rate=self.training_config["learning_rate"],
-            per_device_train_batch_size=self.training_config["per_device_train_batch_size"],
-            per_device_eval_batch_size=self.training_config["per_device_eval_batch_size"],
-            gradient_accumulation_steps=self.training_config["gradient_accumulation_steps"],
+            per_device_train_batch_size=self.training_config[
+                "per_device_train_batch_size"
+            ],
+            per_device_eval_batch_size=self.training_config[
+                "per_device_eval_batch_size"
+            ],
+            gradient_accumulation_steps=self.training_config[
+                "gradient_accumulation_steps"
+            ],
             warmup_steps=self.training_config["warmup_steps"],
             weight_decay=self.training_config["weight_decay"],
             logging_steps=self.training_config["logging_steps"],
@@ -282,8 +311,8 @@ class ORPOTrainerWrapper:
             optim=self.training_config["optim"],
             report_to=self.output_config.get("report_to", "none"),
             run_name=self.output_config.get("run_name"),
-            remove_unused_columns=False, # Important for custom datasets sometimes
-            dataloader_num_workers=0, # Prevent deadlocks
+            remove_unused_columns=False,  # Important for custom datasets sometimes
+            dataloader_num_workers=0,  # Prevent deadlocks
         )
 
         # Define VB-LoRA Config
@@ -293,7 +322,15 @@ class ORPOTrainerWrapper:
 
         peft_config = VBLoRAConfig(
             **peft_config_dict,
-            target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+            target_modules=[
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+            ],
             bias="none",
         )
 
