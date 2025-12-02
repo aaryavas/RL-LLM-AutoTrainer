@@ -116,7 +116,7 @@ class ORPODataGenerator:
                     device_map=self.device,
                     trust_remote_code=True,
                 )
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, padding_size="left")
         
         # Ensure padding token is set
         if self.tokenizer.pad_token is None:
