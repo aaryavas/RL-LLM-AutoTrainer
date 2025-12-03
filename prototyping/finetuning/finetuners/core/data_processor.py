@@ -3,14 +3,17 @@ Data processing components for VB-LoRA fine-tuning.
 Handles dataset loading, tokenization, and collation.
 """
 
+import logging
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
-from torch.nn.utils.rnn import pad_sequence
-from typing import Dict, List, Optional, Tuple
 from datasets import Dataset as HFDataset
-from pathlib import Path
-import logging
+from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import Dataset
+
+from ..utils import DataSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +63,12 @@ class VBLoRADataset(Dataset):
         # Use chat template if available to match inference
         if hasattr(self.tokenizer, "apply_chat_template"):
             messages = [{"role": "user", "content": input_text}]
-            source = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            source = self.tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
         else:
             source = f"{self.tokenizer.bos_token}{input_text}"
-            
+
         target = f"{output_text}{self.tokenizer.eos_token}"
 
         source_ids = self.tokenizer(
@@ -260,30 +265,31 @@ class VBLoRADataProcessor:
             train_on_source=train_on_source,
         )
 
+
 class PreferenceDataProcessor:
     """
     Process preference data (prompt, chosen, rejected) for ORPO training.
     """
 
     def __init__(
-            self,
-            tokenizer,
-            max_prompt_length: int = 512,
-            max_completion_length: int = 1024,
+        self,
+        tokenizer,
+        max_prompt_length: int = 512,
+        max_completion_length: int = 1024,
     ):
         self.tokenizer = tokenizer
         self.max_prompt_length = max_prompt_length
         self.max_completion_length = max_completion_length
 
     def load_and_split_data(
-            self,
-            data_path: str,
-            test_size: float = 0.1,
-            val_size: float = 0.1,
-            random_state: int = 42,
-            prompt_column: str = "prompt",
-            chosen_column: str = "chosen",
-            rejected_column: str = "rejected",
+        self,
+        data_path: str,
+        test_size: float = 0.1,
+        val_size: float = 0.1,
+        random_state: int = 42,
+        prompt_column: str = "prompt",
+        chosen_column: str = "chosen",
+        rejected_column: str = "rejected",
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Load CSV and split into train/val/test.
@@ -303,9 +309,7 @@ class PreferenceDataProcessor:
             df["label"] = 0
 
         splitter = DataSplitter(
-            test_size=test_size,
-            val_size=val_size,
-            random_state=random_state
+            test_size=test_size, val_size=val_size, random_state=random_state
         )
 
         # We use the parent class's split_dataframe method
@@ -317,12 +321,14 @@ class PreferenceDataProcessor:
 
         def standardize(d: pd.DataFrame) -> pd.DataFrame:
             d = d.copy()
-            d = d.rename(columns={
-                prompt_column: "prompt",
-                chosen_column: "chosen",
-                rejected_column: "rejected"
-            })
-            return d[[ "prompt", "chosen", "rejected" ]]
+            d = d.rename(
+                columns={
+                    prompt_column: "prompt",
+                    chosen_column: "chosen",
+                    rejected_column: "rejected",
+                }
+            )
+            return d[["prompt", "chosen", "rejected"]]
 
         return standardize(train_df), standardize(val_df), standardize(test_df)
 
@@ -342,9 +348,7 @@ class PreferenceDataProcessor:
             # Ensure we add the generation prompt
             if hasattr(self.tokenizer, "apply_chat_template"):
                 prompt_str = self.tokenizer.apply_chat_template(
-                    messages,
-                    tokenize=False,
-                    add_generation_prompt=True
+                    messages, tokenize=False, add_generation_prompt=True
                 )
             else:
                 # Fallback if no chat template (shouldn't happen for SmolLM2)
@@ -358,11 +362,18 @@ class PreferenceDataProcessor:
             return {
                 "prompt": prompt_str,
                 "chosen": chosen_response,
-                "rejected": rejected_response
+                "rejected": rejected_response,
             }
 
         # Apply formatting
         formatted_data = df.apply(format_string, axis=1).tolist()
-        dataset = Dataset.from_list(formatted_data)
+
+        # Convert list of dicts to dict of lists for HFDataset
+        data_dict = {
+            "prompt": [item["prompt"] for item in formatted_data],
+            "chosen": [item["chosen"] for item in formatted_data],
+            "rejected": [item["rejected"] for item in formatted_data],
+        }
+        dataset = HFDataset.from_dict(data_dict)
 
         return dataset
