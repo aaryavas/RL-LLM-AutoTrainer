@@ -13,9 +13,9 @@ from peft import PeftModel
 sys.path.append(os.getcwd())
 
 try:
-    from finetuning.training.metrics import MetricsComputer
-    from finetuning.utils.merge_adapter import merge_adapter
-    from finetuning.utils.orpo_generator import ORPODataGenerator
+    from finetuning.finetuners.training.metrics import MetricsComputer
+    from finetuning.finetuners.utils.merge_adapter import merge_adapter
+    from finetuning.finetuners.utils.orpo_generator import ORPODataGenerator
 except ImportError:
     print("Could not import required modules. Make sure you are in the project root.")
     sys.exit(1)
