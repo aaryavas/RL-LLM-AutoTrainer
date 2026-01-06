@@ -354,10 +354,6 @@ Where to go next
 - For ORPO-specific training and utilities: open [prototyping/finetuning/finetuners/orpo/README.md](prototyping/finetuning/finetuners/orpo/README.md).
 - For CLI UX and options: open [prototyping/cli-wrapper/README.md](prototyping/cli-wrapper/README.md).
 
-If you'd like, I can also:
-- Run a quick smoke test of the Python generator in the current environment.
-- Add a minimal LICENSE file (MIT) at the repo root.
-
-
 Acknowledgments
 - Uses Hugging Face transformers and related tooling for model access and text generation.
+- Uses VLLM for optimized CUDA training
