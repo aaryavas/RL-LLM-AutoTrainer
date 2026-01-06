@@ -1,108 +1,18 @@
-# RL-LLM-AutoTrainer
+# RL-LLM-AutoTrainer 🤖
 
-## 🚀 Quick Start
+***Note: This product is a proof of concept and is extremely early in a developmental phase, there may be bugs and flaws in the overall implementation and delivery of the system.***
 
-> **📖 Looking for a quick reference?** See [SETUP.md](SETUP.md) for a one-page setup guide.
-
-Want to generate synthetic data immediately? Run this:
-
-```bash
-# 1. Navigate to the CLI directory
-cd prototyping/cli-wrapper
-
-# 2. Install and build (first time only)
-npm install && npm run build && npm link
-
-# 3. Run the tool (from anywhere after linking)
-synth-data
-```
-
-That's it! The interactive CLI will guide you through the rest.
-
-**Verify Installation:**
-```bash
-synth-data --version  # Should output: 1.1.0
-synth-data --help     # Shows usage information
-./test.sh             # Run test suite (from cli-wrapper directory)
-```
-
-**What You'll See:**
-```
-   ╭───────────────────────────────────────────────────────────╮
-   │                                                           │
-   │   🚀 SYNTHETIC DATA GENERATOR 🚀                          │
-   │                                                           │
-   │   TypeScript CLI Wrapper for AI-Powered Data Generation   │
-   │                                                           │
-   ╰───────────────────────────────────────────────────────────╯
-
-✔ All dependencies satisfied
-
-📋 STEP 1: Use Case Configuration
-──────────────────────────────────────────────────
-? What is the main purpose of your synthetic data? ›
-```
-
----
+***Additional Note: ReadME Documentation is not complete, more detailed documentation is soon to come 😊***
 
 ## Overview
-- This repository contains prototyping tools for generating synthetic training data and fine-tuning LLMs. The current prototype includes:
-  - A TypeScript/Node.js CLI wrapper that provides an interactive, user-friendly terminal interface.
-  - Python scripts for data generation using the Hugging Face ecosystem.
-  - VB-LoRA fine-tuning module for efficient model adaptation.
+Wecolme to RL-LLM-AutoTrainer a tool specifically designed to make training LLMs easier for all software developers. We reccomend trying out our **CLI TUI tool** for a nice streamlined experience. With our tool we allow the ability to:
+ - Generate synthetic data of the basis of prompt engineering to match the users use case
+ - Finetune an LLM to match a use case using the baseline data
+ - For further training and to avoid an issue of overfitting we further allign to the desired use case with **ORPO Reinforcement Learning**
 
-### Workflow
-1. **Generate synthetic data** - Configure labels, categories, and examples
-2. **Optional: Fine-tune a model** - Use VB-LoRA for memory-efficient fine-tuning on your generated data
 
-Stack and Tooling
-- Languages: TypeScript (Node.js), Python 3
-- Frameworks/Libraries (Node): commander, @inquirer/prompts, chalk, ora, boxen
-- Build Tooling (Node): TypeScript (tsc), ts-node (dev)
-- Package Manager (Node): npm (package-lock.json present)
-- Python Libraries used (inferred from code): python-dotenv, pandas, huggingface-hub, transformers, torch
-- Model access: Hugging Face Hub (requires HF_TOKEN)
 
-Repository Structure
-- prototyping/
-  - cli-wrapper/ — TypeScript CLI package
-    - src/
-      - index.ts — CLI entry point
-      - cli.ts — main orchestrator
-      - config/ — types and defaults
-      - steps/ — configuration step handlers
-      - runners/ — process spawners
-      - utils/ — display and dependency utilities
-    - package.json — npm package with scripts and bin
-    - tsconfig.json — TypeScript config
-  - vblora/ — VB-LoRA fine-tuning module
-    - cli.py — fine-tuning CLI
-    - finetuning.py — main fine-tuning API
-    - config/ — configuration dataclasses
-    - core/ — data processing, model loading
-    - training/ — trainer and callbacks
-  - data-gen.py — Python generator for synthetic data
-
-Entry Points
-- synth-data (global command if linked) → prototyping/cli-wrapper/dist/index.js
-  - npm bin defined in prototyping/cli-wrapper/package.json
-- Node development entry: prototyping/cli-wrapper/src/index.ts (run via ts-node)
-- Python interactive entry: prototyping/interactive-data-gen.py (invoked by the Node CLI)
-- Python generator: prototyping/data-gen.py (called by interactive-data-gen.py)
-
-Requirements
-- Node.js 18+ and npm
-- Python 3.8+ (3.10+ recommended for better torch/transformers support)
-- Internet access for Hugging Face model downloads
-- Environment variable: HF_TOKEN (Hugging Face token) for model access
-
-Environment Variables
-- HF_TOKEN: Your Hugging Face access token
-  - You can export it directly: export HF_TOKEN=your_token
-  - Or put it in a .env file (python-dotenv is used when available):
-    - HF_TOKEN=your_token
-
-## 📦 Setup and Installation
+## Getting Started/Installing Dependencies
 
 ### Prerequisites
 Before you begin, ensure you have:
@@ -110,7 +20,9 @@ Before you begin, ensure you have:
 - Python 3.8+ (3.10+ recommended)
 - A Hugging Face account and access token
 
-### Step 1: Install TypeScript CLI
+### Setup and run with the CLI TUI 
+
+1: Install TypeScript CLI
 
 Navigate to the CLI package and install dependencies:
 
@@ -137,13 +49,6 @@ npm link
 ./install.sh
 ```
 
-### Step 2: Install Python Dependencies
-
-Install required Python packages for data generation:
-
-```bash
-pip install python-dotenv pandas huggingface-hub transformers torch
-```
 
 **For fine-tuning, also install:**
 
@@ -157,7 +62,7 @@ pip install peft accelerate bitsandbytes datasets evaluate scikit-learn nltk rou
 pip install -r prototyping/vblora/requirements.txt
 ```
 
-### Step 3: Configure Hugging Face Token
+### Step 3: Configure Hugging Face Token (Optional for TUI Tool)
 
 Set your HF_TOKEN environment variable:
 
@@ -180,15 +85,6 @@ synth-data --version
 synth-data --help
 ```
 
-Run the test suite:
-
-```bash
-cd prototyping/cli-wrapper
-./test.sh
-```
-
-## 🚀 Running the Tool
-
 ### Recommended: Global Command
 
 After installation, run from anywhere:
@@ -197,208 +93,271 @@ After installation, run from anywhere:
 synth-data
 ```
 
-✨ **This is the easiest way!** The interactive CLI will guide you through all configuration steps.
 
-### Alternative: Run from CLI Directory
+### Setup and run without the CLI (manual, minimal)
 
-If you haven't run `npm link`, you can run from the CLI package directory:
+1. Prepare Python environment
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+```
+
+2. Install Python dependencies needed for data generation
+
+```bash
+pip install python-dotenv pandas huggingface-hub transformers torch
+```
+
+3. Configure Hugging Face token (one of these)
+
+```bash
+export HF_TOKEN=your_hf_token_here
+# or create a dotenv file used by scripts
+echo "HF_TOKEN=your_hf_token_here" > prototyping/.env
+```
+
+4. Run the interactive Python data generator (no Node/CLI required)
+
+```bash
+cd prototyping
+python interactive-data-gen.py
+# or call the lower-level script directly
+python data-gen.py --help
+```
+
+5. Fine-tune / run VB-LoRA
+
+Follow the `finetuning` README for VB-LoRA usage and options: [prototyping/finetuning/finetuners/README.md](prototyping/finetuning/finetuners/README.md)
+
+6. Use ORPO workflows
+
+See `orpo` README for ORPO-specific training and utilities: [prototyping/finetuning/finetuners/orpo/README.md](prototyping/finetuning/finetuners/orpo/README.md)
+
+B. Setup and run with the CLI (recommended for interactive users)
+
+1. Install Node dependencies and build the CLI
+
+```bash
+cd prototyping/cli-wrapper
+npm install
+npm run build
+# (optional) install globally for `synth-data` convenience
+npm link
+```
+
+2. Verify CLI install
+
+```bash
+# if linked
+synth-data --version
+synth-data --help
+
+# or run from package directory without linking
 cd prototyping/cli-wrapper
 npm start
 ```
 
-### Development Mode
-
-For development with live TypeScript compilation:
+3. Use the CLI to generate synthetic data
 
 ```bash
+# run the interactive flow; follow prompts
+synth-data
+
+# or invoke the local npm start command
 cd prototyping/cli-wrapper
-npm run dev
+npm start
 ```
 
-### Direct Python Execution
+Common commands (summary)
 
-Bypass the Node CLI and run Python directly:
+```bash
+# Manual / non-CLI
+python prototyping/interactive-data-gen.py
+
+# CLI (after npm link)
+- See prototyping/cli-wrapper/README.md for CLI-specific usage details and screenshots/examples.
+
+# VB-LoRA (see detailed README)
+python finetuning/cli.py --help
+
+# ORPO (see detailed README)
+python orpo/cli.py --help
+```
+
+### Synthetic Data Generation
+Our synthetic data generation tool reverse engineers the intel synthetic data generation tool 
+(https://huggingface.co/spaces/Intel/synthetic-data-generator)
+
+
+
+For synthetic data generation we will need the following to build **high quality** data:
+- Use Case 
+
+- Purpose and application context
+
+- Label Defintions
+
+- Categories for Variation
+
+- Few Shot Examples
+
+
+#### Example Use Case 
+
+Soon to come ... 
+
+## Finetuning
+
+For finetuning we employ the following pipeline:
+ 
+ - First we do supervised finetuning (VB-LoRA) training of the synthetic data
+ - Once supervised finetuning is complete if the user is not satisfied with metrics we continue onwards to reinforcment learning based finetuning (ORPO) 
+ - We aim to further improve metrics with reinforcement learning while avoiding overfitting
+
+
+### VB-Lora FineTuning 
+
+Please reference the following documentation for understanding of the utlilty of this tool. 
+
+VB-LoRA fine-tuning: [prototyping/finetuning/finetuners/README.md](prototyping/finetuning/finetuners/README.md)
+
+#### Overview
+
+### ORPO Reinforcement Learning Finetuning
+
+Please reference the following documentation for understanding the utility of this tool.
+
+- ORPO trainer and tools: [prototyping/finetuning/finetuners/orpo/README.md](prototyping/finetuning/finetuners/orpo/README.md)
+
+
+Related documentation
+- VB-LoRA fine-tuning: [prototyping/finetuning/finetuners/README.md](prototyping/finetuning/finetuners/README.md)
+- ORPO trainer and tools: [prototyping/finetuning/finetuners/orpo/README.md](prototyping/finetuning/finetuners/orpo/README.md)
+- CLI wrapper (detailed CLI docs): [prototyping/cli-wrapper/README.md](prototyping/cli-wrapper/README.md)
+
+Prerequisites
+- Node.js 18+ and npm (only required for CLI UI tool)
+- Python 3.8+ (3.10+ recommended)
+- Git and internet access for model downloads
+- Hugging Face token: set `HF_TOKEN` or create `prototyping/.env`
+- **Highly Reccomended:** CUDA compatible GPU
+
+Quick overview
+- Generate synthetic data using the Python generator.
+- Optionally fine-tune with VB-LoRA and/or run ORPO workflows (see linked READMEs).
+
+A. Setup and run without the CLI (manual, minimal)
+
+1. Prepare Python environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+```
+
+2. Install Python dependencies needed for data generation
+
+```bash
+pip install python-dotenv pandas huggingface-hub transformers torch
+```
+
+3. Configure Hugging Face token (one of these)
+
+```bash
+export HF_TOKEN=your_hf_token_here
+# or create a dotenv file used by scripts
+echo "HF_TOKEN=your_hf_token_here" > prototyping/.env
+```
+
+4. Run the interactive Python data generator (no Node/CLI required)
 
 ```bash
 cd prototyping
-python3 interactive-data-gen.py
+python interactive-data-gen.py
+# or call the lower-level script directly
+python data-gen.py --help
 ```
 
-## 🤖 Fine-Tuning Configuration
+5. Optional: Fine-tune / run VB-LoRA
 
-After generating synthetic data, the CLI will prompt you to optionally fine-tune a model. Here are the configurable options:
+Follow the `finetuning` README for VB-LoRA usage and options: [prototyping/finetuning/finetuners/README.md](prototyping/finetuning/finetuners/README.md)
 
-### Model Selection
-- **Model Family**: Currently SmolLM2 (extensible for future models)
-- **Variants**: 135M, 360M, 1.7B
-- **Presets**: minimal, standard, aggressive
+6. Optional: Use ORPO workflows
 
-### Training Parameters
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| Epochs | 3 | Number of training epochs |
-| Learning Rate | 2e-4 | Base learning rate |
-| Batch Size | 4 | Batch size per device |
-| Early Stopping | 3 | Patience in epochs |
+See `orpo` README for ORPO-specific training and utilities: [prototyping/finetuning/finetuners/orpo/README.md](prototyping/finetuning/finetuners/orpo/README.md)
 
-### VB-LoRA Parameters
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| Num Vectors | 90 | Vectors in vector bank |
-| Vector Length | 64 | Length of each vector |
-| LoRA Rank | 4 | Rank for low-rank adaptation |
-| LR Vector Bank | 1e-3 | Learning rate for vector bank |
-| LR Logits | 1e-2 | Learning rate for logits |
+B. Setup and run with the CLI (recommended for interactive users)
 
-### Hardware Settings
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| Bits | 4 | Quantization (4/8/16/32) |
-| BF16 | false | Use bfloat16 precision |
-| FP16 | false | Use float16 precision |
+1. Install Node dependencies and build the CLI
 
-### Direct Fine-Tuning (Python)
-
-You can also run fine-tuning directly:
-
-```bash
-cd prototyping/vblora
-python cli.py finetune data.csv --variant SmolLM2-360M --epochs 5
-```
-
-## 🛠️ Available Scripts
-
-All commands should be run from `prototyping/cli-wrapper`:
-
-**Development:**
-```bash
-npm run dev        # Run with ts-node (hot reload)
-npm run watch      # Watch mode for TypeScript compilation
-```
-
-**Build:**
-```bash
-npm run build      # Compile TypeScript to JavaScript
-```
-
-**Run:**
-```bash
-npm start          # Run the compiled CLI
-synth-data         # Run globally (after npm link)
-```
-
-**Testing:**
-```bash
-./test.sh          # Run the test suite
-```
-
-Notes on Behavior
-- The Node CLI checks for Python 3 availability and for prototyping/interactive-data-gen.py. It then launches the Python interactive flow, which:
-  - Verifies the presence of key Python packages.
-  - Checks for HF_TOKEN and offers to continue if missing (some models will require it).
-  - Guides you through defining labels, categories, examples, and generation parameters.
-  - Invokes data-gen.py with the collected configuration.
-
-## Troubleshooting
-
-**`synth-data: command not found`**
-```bash
-cd prototyping/cli-wrapper
-npm link
-```
-
-**Build errors with TypeScript:**
 ```bash
 cd prototyping/cli-wrapper
 npm install
 npm run build
-```
-
-**Python dependencies missing:**
-```bash
-pip install python-dotenv pandas huggingface-hub transformers torch
-# or with uv:
-uv pip install python-dotenv pandas huggingface-hub transformers torch
-```
-
-**HuggingFace authentication errors:**
-```bash
-export HF_TOKEN=your_token_here
-# or create a .env file in prototyping/ with:
-echo "HF_TOKEN=your_token_here" > prototyping/.env
-```
-
-**To reset and reinstall everything:**
-```bash
-cd prototyping/cli-wrapper
-rm -rf node_modules dist
-npm install
-npm run build
+# (optional) install globally for `synth-data` convenience
 npm link
-synth-data --version  # verify it works
 ```
 
-## ✅ Testing
-
-### Quick Verification
-
-Check that the CLI is installed correctly:
+2. Verify CLI install
 
 ```bash
+# if linked
 synth-data --version
-```
-
-View help documentation:
-
-```bash
 synth-data --help
-```
 
-### Run the Automated Test Suite
-
-```bash
+# or run from package directory without linking
 cd prototyping/cli-wrapper
-./test.sh
+npm start
 ```
 
-The test suite verifies:
-- ✓ Build succeeded
-- ✓ Help command works
-- ✓ Version check works
-- ✓ Python script exists
-- ✓ Dependencies installed
-- ✓ TypeScript compiles without errors
-
-### Test the Full Flow
-
-Generate a small test dataset:
+3. Use the CLI to generate synthetic data
 
 ```bash
+# run the interactive flow; follow prompts
 synth-data
+
+# or invoke the local npm start command
+cd prototyping/cli-wrapper
+npm start
 ```
 
-Follow the interactive prompts and set a small sample size (e.g., 5 samples) for a quick test.
+CLI behavior and automation
+- The CLI collects labels, examples, and generation parameters then calls the Python generator (`prototyping/interactive-data-gen.py` / `prototyping/data-gen.py`).
+- The CLI checks for Python availability and `HF_TOKEN`. It will continue without `HF_TOKEN` but some models require authentication.
 
-### Future Improvements
-- Add unit tests for configuration assembly
-- Add integration tests with mock models
-- Add CI/CD pipeline for automated testing
+Common commands (summary)
 
-Project Status and Roadmap
-- Current focus: interactive synthetic data generation prototype.
-- TODO: Document data-gen.py parameters/outputs in detail.
-- TODO: Add example outputs and a small sample dataset for verification.
-- TODO: Wire into any RL training loop if applicable to the broader project goals.
+```bash
+# Manual / non-CLI
+python prototyping/interactive-data-gen.py
 
-License
-- The prototyping/cli-wrapper package declares license: MIT (see its package.json).
-- Top-level repository license file not found.
-- TODO: Add a LICENSE file at the repository root clarifying the license for the entire project.
-
-Additional Documentation
+# CLI (after npm link)
 - See prototyping/cli-wrapper/README.md for CLI-specific usage details and screenshots/examples.
+
+# VB-LoRA (see detailed README)
+python finetuning/cli.py --help
+
+# ORPO (see detailed README)
+python orpo/cli.py --help
+```
+
+Notes and troubleshooting (MVP)
+- If `synth-data: command not found`, run `npm link` from `prototyping/cli-wrapper`.
+- If Python packages are missing: `pip install python-dotenv pandas huggingface-hub transformers torch`.
+- If Hugging Face auth errors occur, ensure `HF_TOKEN` is exported or present in `prototyping/.env`.
+
+Where to go next
+- For VB-LoRA details and training presets: open [prototyping/finetuning/finetuners/README.md](prototyping/finetuning/finetuners/README.md).
+- For ORPO-specific training and utilities: open [prototyping/finetuning/finetuners/orpo/README.md](prototyping/finetuning/finetuners/orpo/README.md).
+- For CLI UX and options: open [prototyping/cli-wrapper/README.md](prototyping/cli-wrapper/README.md).
+
+If you'd like, I can also:
+- Run a quick smoke test of the Python generator in the current environment.
+- Add a minimal LICENSE file (MIT) at the repo root.
+
 
 Acknowledgments
 - Uses Hugging Face transformers and related tooling for model access and text generation.
