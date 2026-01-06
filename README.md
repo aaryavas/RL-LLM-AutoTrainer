@@ -4,6 +4,9 @@
 
 ***Additional Note: ReadME Documentation is not complete, more detailed documentation is soon to come 😊***
 
+https://github.com/user-attachments/assets/445bf62c-b9f6-4d2e-a638-2353fc71c880
+
+
 ## Overview
 Wecolme to RL-LLM-AutoTrainer a tool specifically designed to make training LLMs easier for all software developers. We reccomend trying out our **CLI TUI tool** for a nice streamlined experience. With our tool we allow the ability to:
  - Generate synthetic data of the basis of prompt engineering to match the users use case
