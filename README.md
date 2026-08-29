@@ -228,7 +228,7 @@ VB-LoRA fine-tuning: [prototyping/finetuning/finetuners/README.md](prototyping/f
 
 #### Overview
 
-### ORPO Reinforcement Learning Finetuning
+### ORPO Alignment
 
 Please reference the following documentation for understanding the utility of this tool.
 
